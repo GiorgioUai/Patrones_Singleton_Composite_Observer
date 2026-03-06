@@ -5,21 +5,28 @@ using System.Data.SqlClient;
 
 namespace DAL
 {
+    /// <summary>
+    /// Clase de Acceso a Datos para la entidad Usuario.
+    /// Implementa la persistencia y carga de seguridad (Composite).
+    /// </summary>
     public class UsuarioDAO : DAO, IUsuarioDAO
     {
+        #region "Métodos Públicos"
+
         public UsuarioBE ValidarAcceso(string email, string passwordHash)
         {
             UsuarioBE usuarioEncontrado = null;
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                // Mantenemos la consulta limpia sin el campo 'Rol'
-                string query = "SELECT Id, Nombre, Apellido, Email FROM Usuarios WHERE Email = @email AND Password = @password";
+                // Consulta sincronizada con el esquema real (IdIdioma sin guion)
+                string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios WHERE Email = @email AND Password = @pass";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@email", email);
-                    command.Parameters.AddWithValue("@password", passwordHash);
+                    // Sincronizamos el nombre del parámetro con la query (@pass)
+                    command.Parameters.AddWithValue("@pass", passwordHash);
 
                     try
                     {
@@ -28,24 +35,27 @@ namespace DAL
                         {
                             if (reader.Read())
                             {
+                                // Instanciamos la entidad de la capa BE
                                 usuarioEncontrado = new UsuarioBE
                                 {
                                     Id = Convert.ToInt32(reader["Id"]),
                                     Nombre = reader["Nombre"].ToString(),
                                     Apellido = reader["Apellido"].ToString(),
-                                    Email = reader["Email"].ToString()
+                                    Email = reader["Email"].ToString(),
+                                    // Leemos el idioma preferido (Default 1 si es NULL)
+                                    IdIdioma = reader["IdIdioma"] != DBNull.Value ? Convert.ToInt32(reader["IdIdioma"]) : 1
                                 };
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception("Error al validar el acceso en la base de datos.", ex);
+                        throw new Exception("Error crítico en DAL: No se pudo validar el acceso.", ex);
                     }
                 }
             }
 
-            // PASO A PASO: Si el usuario existe, completamos su seguridad
+            // Si el usuario es válido, disparamos la carga de sus Roles/Patentes
             if (usuarioEncontrado != null)
             {
                 CargarSeguridadUsuario(usuarioEncontrado);
@@ -54,15 +64,19 @@ namespace DAL
             return usuarioEncontrado;
         }
 
-        // Método privado para no ensuciar la lógica de ValidarAcceso
+        #endregion
+
+        #region "Métodos Privados de Soporte (Seguridad)"
+
+        /// <summary>
+        /// Carga de forma recursiva la estructura de permisos del usuario.
+        /// </summary>
         private void CargarSeguridadUsuario(UsuarioBE pUsuario)
         {
             try
             {
-                // Instanciamos la DAL de permisos (o la inyectamos si prefieres)
+                // Usamos la DAL de permisos para obtener la estructura Composite
                 PermisoDAL permisoDAL = new PermisoDAL();
-
-                // Obtenemos todos los componentes (Simples y Compuestos)
                 var componentes = permisoDAL.ObtenerPermisosUsuario(pUsuario.Id);
 
                 foreach (var comp in componentes)
@@ -72,9 +86,10 @@ namespace DAL
             }
             catch (Exception ex)
             {
-                // Si falla la carga de permisos, el usuario no debería poder operar
-                throw new Exception("Error al cargar la configuración de seguridad del usuario.", ex);
+                throw new Exception("Error al cargar la estructura de Roles del usuario.", ex);
             }
         }
+
+        #endregion
     }
 }

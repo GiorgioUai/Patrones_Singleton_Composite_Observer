@@ -1,87 +1,181 @@
-﻿using BE;
-using BL;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
+using BE;
+using BL;
 
 namespace UI
 {
-    public partial class frmLogIn : Form
+    /// <summary>
+    /// Formulario de autenticación de usuarios con soporte Multiidioma y UX mejorada.
+    /// </summary>
+    public partial class frmLogIn : Form, IIdiomaObserver
     {
+        #region "Atributos / Variables Privadas"
+
+        private readonly IdiomaManagerBL _idiomaManager = IdiomaManagerBL.GetInstance();
+        private bool _placeholderActivo = true;
+
+        #endregion
+
+        #region "Constructor"
+
         public frmLogIn()
         {
             InitializeComponent();
         }
 
+        #endregion
+
+        #region "Eventos del Formulario"
+
+        private void frmLogIn_Load(object sender, EventArgs e)
+        {
+            _idiomaManager.Suscribir(this);
+
+            // SEGURIDAD: Configuramos la máscara de password por código [cite: 2026-03-06]
+            txtPassword.PasswordChar = '*';
+            txtPassword.UseSystemPasswordChar = true;
+
+            ActualizarIdioma();
+        }
+
+        private void frmLogIn_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _idiomaManager.Desuscribir(this);
+        }
+
+        #endregion
+
+        #region "Implementación de IIdiomaObserver"
+
+        public void ActualizarIdioma()
+        {
+            Traductor.Traducir(this.Controls);
+
+            if (_placeholderActivo)
+            {
+                EstablecerPlaceholder();
+            }
+
+            if (this.Tag != null)
+                this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+        }
+
+        #endregion
+
+        #region "Lógica de Placeholder (Email)"
+
+        private void EstablecerPlaceholder()
+        {
+            txtUsuario.Text = _idiomaManager.ObtenerTexto("txt_Placeholder_Email");
+            txtUsuario.ForeColor = Color.Gray;
+            _placeholderActivo = true;
+        }
+
+        private void txtUsuario_Enter(object sender, EventArgs e)
+        {
+            string placeholderTraducido = _idiomaManager.ObtenerTexto("txt_Placeholder_Email");
+
+            if (txtUsuario.Text == placeholderTraducido)
+            {
+                txtUsuario.Text = "";
+                txtUsuario.ForeColor = Color.Black;
+                _placeholderActivo = false;
+            }
+        }
+
+        private void txtUsuario_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtUsuario.Text))
+            {
+                EstablecerPlaceholder();
+            }
+        }
+
+        #endregion
+
+        #region "Eventos de Botones (Lógica de Negocio)"
+
         private void btnLogIn_Click(object sender, EventArgs e)
         {
             try
             {
-                // 1. Instanciamos la lógica de negocio (BL)
-                // El constructor por defecto de UsuarioBL se encarga de crear el DAO internamente.
                 UsuarioBL negocio = new UsuarioBL();
+                string emailParaLogin = _placeholderActivo ? "" : txtUsuario.Text;
 
-                // 2. Llamamos al método LogIn pasándole los datos de los TextBox
-                // La BL hará el Hash de la clave y consultará a la DAL.
-                bool exito = negocio.LogIn(txtUsuario.Text, txtPassword.Text);
+                bool exito = negocio.LogIn(emailParaLogin, txtPassword.Text);
 
                 if (exito)
                 {
-                    // 3. Si tuvo éxito, los datos ya están en el Singleton gracias a la BL.
-                    // Accedemos al Singleton para saludar al usuario.
                     var usuarioLogueado = SesionManagerBL.GetInstance()._Usuario;
-                    MessageBox.Show($"¡Sesión iniciada correctamente!\nBienvenido: {usuarioLogueado.Nombre} {usuarioLogueado.Apellido}",
-                                    "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    string msgExito = _idiomaManager.ObtenerTexto("msg_SesionIniciada");
+                    string tituloExito = _idiomaManager.ObtenerTexto("btn_Ingresar");
 
-                    // Aquí podrías cerrar este form y abrir el Main
-                    // this.DialogResult = DialogResult.OK;
+                    MessageBox.Show($"{msgExito}\nBienvenido: {usuarioLogueado.Nombre} {usuarioLogueado.Apellido}",
+                                    tituloExito, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    frmPrincipal principal = new frmPrincipal();
+                    principal.Show();
+                    this.Hide();
                 }
                 else
                 {
-                    MessageBox.Show("Email o contraseña incorrectos. Por favor, reintente.",
-                                    "Error de Autenticación", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_ErrorLogin"),
+                                    _idiomaManager.ObtenerTexto("frm_LogIn"),
+                                    MessageBoxButtons.OK, MessageBoxIcon.Stop);
+
                     txtPassword.Clear();
                     txtPassword.Focus();
                 }
             }
             catch (Exception ex)
             {
-                // Capturamos errores de conexión o configuración sin exponer detalles técnicos a la UI
-                MessageBox.Show("Ocurrió un inconveniente al intentar ingresar: " + ex.Message,
-                                "Error de Sistema", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error: " + ex.Message, "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void btnSalir_Click(object sender, EventArgs e)
-        {            
-            Application.Exit();
-        }
-
-        private void btnRegistrarse_Click(object sender, EventArgs e)
         {
-            // Verificamos si hay alguien en sesión a través del Singleton
-            if (SesionManagerBL.GetInstance()._Usuario != null)
-            {
-                MessageBox.Show($"Bienvenido, {SesionManagerBL.GetInstance()._Usuario.Nombre}");
-            }
-            else
-            {
-                MessageBox.Show("No hay nadie logueado actualmente.");
-            }
+            Application.Exit();
         }
 
         private void btnLogOut_Click(object sender, EventArgs e)
         {
             SesionManagerBL.GetInstance().LogOut();
             limpiarCampos();
-            MessageBox.Show("Sesión cerrada correctamente.");
+            MessageBox.Show(_idiomaManager.ObtenerTexto("msg_SesionCerrada"));
         }
-        private void limpiarCampos()
+
+        #endregion
+
+        #region "Métodos de Soporte"
+
+        /// <summary>
+        /// Limpia los campos de texto y restablece placeholders. 
+        /// AHORA ES PUBLIC para ser llamado desde el formulario principal [cite: 2026-03-06].
+        /// </summary>
+        public void limpiarCampos()
         {
-            txtNombre.Clear();
-            txtApellido.Clear();
-            txtUsuario.Clear();
+            if (txtNombre != null) txtNombre.Clear();
+            if (txtApellido != null) txtApellido.Clear();
+
+            // Borrado físico de la clave [cite: 2026-03-06]
+            txtPassword.Text = string.Empty;
             txtPassword.Clear();
+
+            txtUsuario.Text = "";
+            EstablecerPlaceholder();
+
             txtUsuario.Focus();
+        }
+
+        #endregion
+
+        private void btnRegistrarse_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -46,6 +46,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DAO.cs" />
+    <Compile Include="IdiomaDAL.cs" />
+    <Compile Include="IIdiomaDAL.cs" />
     <Compile Include="IPermisoDAL.cs" />
     <Compile Include="IUsuarioDAL.cs" />
     <Compile Include="IUsuarioDAO.cs" />

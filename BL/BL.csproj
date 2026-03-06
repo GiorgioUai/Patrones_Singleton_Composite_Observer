@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IdiomaManagerBL.cs" />
     <Compile Include="PermisoBL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SesionManagerBL.cs" />

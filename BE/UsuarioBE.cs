@@ -3,25 +3,53 @@ using System.Collections.Generic;
 
 namespace BE
 {
+    /// <summary>
+    /// Representa la entidad de Usuario con soporte para seguridad basada en Roles (Composite)
+    /// y persistencia de preferencias de personalización.
+    /// </summary>
     public class UsuarioBE
     {
+        #region "Propiedades de Perfil"
+
         public int Id { get; set; }
         public string Nombre { get; set; }
         public string Apellido { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
 
-        // Usamos una lista privada y una propiedad pública blindada
+        /// <summary>
+        /// Identificador del idioma preferido del usuario.
+        /// Sincronizado con la columna 'IdIdioma' de SQL.
+        /// </summary>
+        public int IdIdioma { get; set; }
+
+        #endregion
+
+        #region "Seguridad (Pattern Composite)"
+
+        // Lista privada para manejo interno de la estructura de permisos
         private List<ComponenteBE> _permisos = new List<ComponenteBE>();
 
+        /// <summary>
+        /// Colección de permisos y roles asignados al usuario (Solo lectura).
+        /// </summary>
         public IReadOnlyCollection<ComponenteBE> Permisos => _permisos.AsReadOnly();
 
+        /// <summary>
+        /// Agrega un componente (Permiso simple o Rol) a la estructura del usuario.
+        /// </summary>
         public void AgregarPermiso(ComponenteBE permiso)
         {
-            _permisos.Add(permiso);
+            if (permiso != null)
+            {
+                _permisos.Add(permiso);
+            }
         }
 
-        // El método de conveniencia que usará la UI
+        /// <summary>
+        /// Valida de forma recursiva si el usuario posee el permiso solicitado (Tag).
+        /// </summary>
+        /// <param name="nombrePermiso">Nombre del permiso o Tag a validar.</param>
         public bool ValidarPermisos(string nombrePermiso)
         {
             foreach (var p in _permisos)
@@ -30,5 +58,7 @@ namespace BE
             }
             return false;
         }
+
+        #endregion
     }
 }
