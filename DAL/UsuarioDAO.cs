@@ -1,4 +1,5 @@
 ﻿using BE;
+using DAL.Interfaces;
 using System;
 using System.Data;
 using System.Data.SqlClient;

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using BE;
 
-namespace DAL
+namespace DAL.Interfaces
 {
     /// <summary>
     /// Define el contrato para la persistencia de datos multiidioma.

@@ -1,6 +1,6 @@
 ﻿using BE;
 
-namespace DAL
+namespace DAL.Interfaces
 {
     public interface IUsuarioDAO
     {

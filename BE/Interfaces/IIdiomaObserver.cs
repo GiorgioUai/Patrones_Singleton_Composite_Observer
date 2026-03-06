@@ -1,6 +1,7 @@
 ﻿using System;
 
-namespace BE
+namespace BE.Interfaces
+
 {
     #region "Contrato de Multiidioma"
 

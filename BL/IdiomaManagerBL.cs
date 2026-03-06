@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using BE;
+using BE.Interfaces;
 using DAL;
+using DAL.Interfaces;
 
 namespace BL
 {

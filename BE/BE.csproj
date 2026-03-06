@@ -44,8 +44,8 @@
     <Compile Include="ComponenteBE.cs" />
     <Compile Include="CompuestoBE.cs" />
     <Compile Include="IdiomaBE.cs" />
-    <Compile Include="IIdiomaObserver.cs" />
-    <Compile Include="ISesionObserver.cs" />
+    <Compile Include="Interfaces\IIdiomaObserver.cs" />
+    <Compile Include="Interfaces\ISesionObserver.cs" />
     <Compile Include="PermisoBE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SesionBE.cs" />

@@ -3,6 +3,7 @@ using BE;
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using DAL.Interfaces;
 
 namespace BL
 {
