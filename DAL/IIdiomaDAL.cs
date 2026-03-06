@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using BE; // Crucial para que la interfaz reconozca la entidad IdiomaBE [cite: 2026-03-06]
+using BE;
 
 namespace DAL
 {

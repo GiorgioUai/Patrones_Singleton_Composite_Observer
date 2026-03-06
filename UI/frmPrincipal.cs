@@ -141,7 +141,7 @@ namespace UI
 
             if (login != null)
             {
-                // 3. LIMPIEZA: Borramos password y reseteamos el placeholder antes de mostrarlo [cite: 2026-03-06]
+                // 3. LIMPIEZA: Borramos password y reseteamos el placeholder antes de mostrarlo
                 login.limpiarCampos();
 
                 login.Show();

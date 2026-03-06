@@ -18,8 +18,7 @@ namespace DAL
             UsuarioBE usuarioEncontrado = null;
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                // Consulta sincronizada con el esquema real (IdIdioma sin guion)
+            {                
                 string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios WHERE Email = @email AND Password = @pass";
 
                 using (SqlCommand command = new SqlCommand(query, connection))

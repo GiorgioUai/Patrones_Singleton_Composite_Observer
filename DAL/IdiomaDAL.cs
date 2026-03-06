@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using BE; // Crucial para reconocer la entidad IdiomaBE [cite: 2026-03-06]
+using BE;
 
 namespace DAL
 {
@@ -24,7 +24,7 @@ namespace DAL
 
             using (SqlConnection cn = new SqlConnection(_connectionString))
             {
-                // Agregamos el Id a la consulta para persistencia [cite: 2026-03-06]
+                // Agregamos el Id a la consulta para persistencia
                 string query = "SELECT Id, Nombre FROM Idioma";
 
                 using (SqlCommand cmd = new SqlCommand(query, cn))
@@ -34,7 +34,7 @@ namespace DAL
                     {
                         while (reader.Read())
                         {
-                            // Creamos el objeto de entidad y lo agregamos a la lista [cite: 2026-03-06]
+                            // Creamos el objeto de entidad y lo agregamos a la lista
                             idiomas.Add(new IdiomaBE
                             {
                                 Id = Convert.ToInt32(reader["Id"]),

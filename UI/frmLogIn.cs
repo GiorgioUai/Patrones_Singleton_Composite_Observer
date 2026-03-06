@@ -34,7 +34,7 @@ namespace UI
         {
             _idiomaManager.Suscribir(this);
 
-            // SEGURIDAD: Configuramos la máscara de password por código [cite: 2026-03-06]
+            // SEGURIDAD: Configuramos la máscara de password por código
             txtPassword.PasswordChar = '*';
             txtPassword.UseSystemPasswordChar = true;
 
@@ -154,14 +154,14 @@ namespace UI
 
         /// <summary>
         /// Limpia los campos de texto y restablece placeholders. 
-        /// AHORA ES PUBLIC para ser llamado desde el formulario principal [cite: 2026-03-06].
+        /// AHORA ES PUBLIC para ser llamado desde el formulario principal.
         /// </summary>
         public void limpiarCampos()
         {
             if (txtNombre != null) txtNombre.Clear();
             if (txtApellido != null) txtApellido.Clear();
 
-            // Borrado físico de la clave [cite: 2026-03-06]
+            // Borrado físico de la clave
             txtPassword.Text = string.Empty;
             txtPassword.Clear();
 
