@@ -4,6 +4,7 @@ using BE;
 using BE.Interfaces;
 using DAL;
 using DAL.Interfaces;
+using System.Linq;
 
 namespace BL
 {
@@ -26,9 +27,9 @@ namespace BL
         #region "Propiedades"
 
         /// <summary>
-        /// Almacena el código del idioma actual (ej: "ES", "EN").
+        /// Almacena el objeto completo del idioma actual (contiene Id, Nombre y Sigla).
         /// </summary>
-        public string IdiomaActual { get; private set; }
+        public IdiomaBE IdiomaActual { get; private set; }
 
         #endregion
 
@@ -37,8 +38,10 @@ namespace BL
         private IdiomaManagerBL()
         {
             _idiomaDAL = new IdiomaDAL();
-            // Idioma por defecto al iniciar la aplicación
-            IdiomaActual = "ES";
+
+            // Inicializamos con un objeto IdiomaBE por defecto (ES = ID 1)
+            IdiomaActual = new IdiomaBE { Id = 1, Nombre = "ES" };
+
             CargarTraducciones();
         }
 
@@ -92,31 +95,40 @@ namespace BL
         {
             if (nuevoIdioma != null)
             {
-                CambiarIdioma(nuevoIdioma.Nombre); // Reutilizamos la lógica del string
+                IdiomaActual = nuevoIdioma;
+                CargarTraducciones();
+                Notificar();
             }
         }
 
         /// <summary>
         /// Cambia el idioma actual basándose en su nombre/código (ej: "ES").
+        /// Busca el ID correspondiente en la DAL para mantener la integridad del objeto.
         /// </summary>
         public void CambiarIdioma(string nombreIdioma)
         {
-            IdiomaActual = nombreIdioma;
-            CargarTraducciones();
-            Notificar();
+            // Buscamos el objeto completo para no perder el ID
+            var idiomasDisponibles = ObtenerIdiomas();
+            var idiomaEncontrado = idiomasDisponibles.FirstOrDefault(i => i.Nombre.Equals(nombreIdioma, StringComparison.OrdinalIgnoreCase));
+
+            if (idiomaEncontrado != null)
+            {
+                CambiarIdioma(idiomaEncontrado);
+            }
+            else
+            {
+                // Fallback por seguridad si no se encuentra en la DB
+                IdiomaActual = new IdiomaBE { Id = 1, Nombre = nombreIdioma };
+                CargarTraducciones();
+                Notificar();
+            }
         }
 
-        /// <summary>
-        /// Retorna la lista de todos los idiomas disponibles en la base de datos.
-        /// </summary>
         public List<IdiomaBE> ObtenerIdiomas()
         {
             return _idiomaDAL.ObtenerIdiomas();
         }
 
-        /// <summary>
-        /// Retorna la traducción correspondiente a un Tag específico.
-        /// </summary>
         public string ObtenerTexto(string tag)
         {
             if (_traducciones != null && _traducciones.ContainsKey(tag))
@@ -126,12 +138,10 @@ namespace BL
             return $"[{tag}]";
         }
 
-        /// <summary>
-        /// Actualiza el diccionario de traducciones desde la DAL.
-        /// </summary>
         private void CargarTraducciones()
         {
-            _traducciones = _idiomaDAL.ObtenerTraducciones(IdiomaActual);
+            // Ahora pasamos el Nombre (sigla) del objeto IdiomaActual
+            _traducciones = _idiomaDAL.ObtenerTraducciones(IdiomaActual.Nombre);
         }
 
         #endregion

@@ -19,13 +19,12 @@ namespace DAL
             UsuarioBE usuarioEncontrado = null;
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
-            {                
+            {
                 string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios WHERE Email = @email AND Password = @pass";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@email", email);
-                    // Sincronizamos el nombre del parámetro con la query (@pass)
                     command.Parameters.AddWithValue("@pass", passwordHash);
 
                     try
@@ -35,14 +34,12 @@ namespace DAL
                         {
                             if (reader.Read())
                             {
-                                // Instanciamos la entidad de la capa BE
                                 usuarioEncontrado = new UsuarioBE
                                 {
                                     Id = Convert.ToInt32(reader["Id"]),
                                     Nombre = reader["Nombre"].ToString(),
                                     Apellido = reader["Apellido"].ToString(),
                                     Email = reader["Email"].ToString(),
-                                    // Leemos el idioma preferido (Default 1 si es NULL)
                                     IdIdioma = reader["IdIdioma"] != DBNull.Value ? Convert.ToInt32(reader["IdIdioma"]) : 1
                                 };
                             }
@@ -55,7 +52,6 @@ namespace DAL
                 }
             }
 
-            // Si el usuario es válido, disparamos la carga de sus Roles/Patentes
             if (usuarioEncontrado != null)
             {
                 CargarSeguridadUsuario(usuarioEncontrado);
@@ -64,18 +60,59 @@ namespace DAL
             return usuarioEncontrado;
         }
 
+        /// <summary>
+        /// Inserta un usuario y su relación con el Rol Base en una transacción atómica.
+        /// </summary>
+        public bool Registrar(UsuarioBE pUsuario, string pPasswordHash, int pIdRolBase)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                SqlTransaction transaction = connection.BeginTransaction();
+
+                try
+                {
+                    // 1. Insertar el Usuario y obtener su ID generado
+                    string queryUser = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, IdIdioma) 
+                                       VALUES (@nom, @ape, @email, @pass, @idioma); 
+                                       SELECT SCOPE_IDENTITY();";
+
+                    SqlCommand cmdUser = new SqlCommand(queryUser, connection, transaction);
+                    cmdUser.Parameters.AddWithValue("@nom", pUsuario.Nombre);
+                    cmdUser.Parameters.AddWithValue("@ape", pUsuario.Apellido);
+                    cmdUser.Parameters.AddWithValue("@email", pUsuario.Email);
+                    cmdUser.Parameters.AddWithValue("@pass", pPasswordHash);
+                    cmdUser.Parameters.AddWithValue("@idioma", pUsuario.IdIdioma);
+
+                    int nuevoIdUsuario = Convert.ToInt32(cmdUser.ExecuteScalar());
+
+                    // 2. Asignar el Rol Base en la tabla intermedia (Composite)
+                    string queryRol = "INSERT INTO Usuario_Permiso (IdUsuario, IdPermiso) VALUES (@idU, @idR)";
+                    SqlCommand cmdRol = new SqlCommand(queryRol, connection, transaction);
+                    cmdRol.Parameters.AddWithValue("@idU", nuevoIdUsuario); // Vinculado a IdUsuario
+                    cmdRol.Parameters.AddWithValue("@idR", pIdRolBase);     // Vinculado a IdPermiso
+
+                    cmdRol.ExecuteNonQuery();
+
+                    transaction.Commit();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new Exception("Error al registrar usuario: Se realizó Rollback para evitar datos inconsistentes.", ex);
+                }
+            }
+        }
+
         #endregion
 
         #region "Métodos Privados de Soporte (Seguridad)"
 
-        /// <summary>
-        /// Carga de forma recursiva la estructura de permisos del usuario.
-        /// </summary>
         private void CargarSeguridadUsuario(UsuarioBE pUsuario)
         {
             try
             {
-                // Usamos la DAL de permisos para obtener la estructura Composite
                 PermisoDAL permisoDAL = new PermisoDAL();
                 var componentes = permisoDAL.ObtenerPermisosUsuario(pUsuario.Id);
 

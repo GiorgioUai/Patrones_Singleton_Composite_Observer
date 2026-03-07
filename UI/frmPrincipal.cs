@@ -34,11 +34,10 @@ namespace UI
 
         private void frmPrincipal_Load(object sender, EventArgs e)
         {
-            // 1. Configuración visual del menú de idiomas (Despliegue hacia la izquierda)
-            // Usamos el nombre detectado en el diseñador: idiomasToolStripMenuItem
+            // 1. Configuración visual del menú de idiomas
             idiomasToolStripMenuItem.DropDownDirection = ToolStripDropDownDirection.BelowLeft;
 
-            // 2. Registro de este formulario como observador de sesión e idioma
+            // 2. Registro de este formulario como observador
             _sesionManager.Suscribir(this);
             _idiomaManager.Suscribir(this);
 
@@ -47,9 +46,31 @@ namespace UI
             ActualizarIdioma();
         }
 
+        /// <summary>
+        /// Evento central que controla cualquier intento de cierre del formulario (incluyendo la "X").
+        /// </summary>
         private void frmPrincipal_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Desuscripción de ambos gestores para liberar recursos
+            // 1. Verificamos si hay una sesión activa para pedir confirmación
+            if (_sesionManager._Usuario != null)
+            {
+                string mensaje = _idiomaManager.ObtenerTexto("msg_ConfirmarLogout");
+                string titulo = _idiomaManager.ObtenerTexto("cap_Confirmacion");
+
+                DialogResult respuesta = MessageBox.Show(mensaje, titulo, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (respuesta == DialogResult.No)
+                {
+                    // Si el usuario se arrepiente, cancelamos el cierre de la ventana
+                    e.Cancel = true;
+                    return;
+                }
+
+                // 2. Si confirma (SI), procedemos a cerrar la sesión lógica antes de que el form desaparezca
+                _sesionManager.LogOut();
+            }
+
+            // 3. Desuscripción de ambos gestores para liberar recursos y evitar fugas de memoria
             _sesionManager.Desuscribir(this);
             _idiomaManager.Desuscribir(this);
         }
@@ -58,24 +79,15 @@ namespace UI
 
         #region "Implementación de Interfaces (Observer)"
 
-        /// <summary>
-        /// Método gatillado por el SesionManagerBL cuando ocurre un Login o Logout.
-        /// </summary>
         public void ActualizarSesion()
         {
-            // Ejecutamos la validación de permisos sobre los ítems del menú
             ValidarSeguridadMenu(this.MainMenuStrip.Items);
         }
 
-        /// <summary>
-        /// Método gatillado por el IdiomaManagerBL cuando cambia el idioma global.
-        /// </summary>
         public void ActualizarIdioma()
         {
-            // 1. Traducir todos los controles y menús usando el Traductor centralizado de la UI
             Traductor.Traducir(this.Controls);
 
-            // 2. Traducir el título del formulario si tiene Tag asignado
             if (this.Tag != null)
                 this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
         }
@@ -84,31 +96,16 @@ namespace UI
 
         #region "Lógica de Seguridad (Permisos)"
 
-        /// <summary>
-        /// Recorre recursivamente los ítems del menú evaluando la visibilidad según Roles y permisos.
-        /// </summary>
         private void ValidarSeguridadMenu(ToolStripItemCollection pItems)
         {
             foreach (ToolStripItem item in pItems)
             {
-                // Evaluación de visibilidad basada en permisos del usuario actual
                 if (item.Tag != null)
                 {
                     string permisoRequerido = item.Tag.ToString();
-
-                    // Si el usuario tiene el permiso o rol correspondiente, el ítem es visible
-                    if (_sesionManager._Usuario != null && _sesionManager._Usuario.ValidarPermisos(permisoRequerido))
-                    {
-                        item.Visible = true;
-                    }
-                    else
-                    {
-                        // En aplicaciones profesionales, las opciones que el usuario no puede usar se ocultan
-                        item.Visible = false;
-                    }
+                    item.Visible = _sesionManager.TienePermiso(permisoRequerido);
                 }
 
-                // Aplicar recursividad si el ítem tiene sub-menús (DropDownItems)
                 if (item is ToolStripMenuItem menuItem && menuItem.DropDownItems.Count > 0)
                 {
                     ValidarSeguridadMenu(menuItem.DropDownItems);
@@ -132,22 +129,28 @@ namespace UI
 
         #endregion
 
+        #region "Cierre de Sesión"
+
+        /// <summary>
+        /// Al cerrar desde el menú, simplemente invocamos el cierre del formulario.
+        /// La confirmación y el LogOut se gestionan automáticamente en FormClosing.
+        /// </summary>
         private void cerrarToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // 1. Limpiamos la sesión lógica en el Singleton
-            SesionManagerBL.GetInstance().LogOut();
+            this.Close();
 
-            // 2. Buscamos el formulario de Login que está oculto y lo casteamos al tipo correcto
-            frmLogIn login = (frmLogIn)Application.OpenForms["frmLogIn"];
-
-            if (login != null)
+            // Si el cierre fue exitoso (el usuario confirmó), mostramos el login limpio
+            if (_sesionManager._Usuario == null)
             {
-                // 3. LIMPIEZA: Borramos password y reseteamos el placeholder antes de mostrarlo
-                login.limpiarCampos();
-
-                login.Show();
-                this.Close();
+                frmLogIn login = (frmLogIn)Application.OpenForms["frmLogIn"];
+                if (login != null)
+                {
+                    login.limpiarCampos();
+                    login.Show();
+                }
             }
         }
+
+        #endregion
     }
 }

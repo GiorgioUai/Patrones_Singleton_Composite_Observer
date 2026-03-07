@@ -9,10 +9,12 @@ namespace BL
 {
     public class UsuarioBL
     {
+        #region "Atributos / Constructor"
+
         private readonly IUsuarioDAO _usuarioDAO;
-        
+
         public UsuarioBL()
-        {            
+        {
             _usuarioDAO = new UsuarioDAO();
         }
 
@@ -20,6 +22,10 @@ namespace BL
         {
             _usuarioDAO = usuarioDAO;
         }
+
+        #endregion
+
+        #region "Métodos Públicos"
 
         public bool LogIn(string email, string password)
         {
@@ -37,6 +43,25 @@ namespace BL
             return false;
         }
 
+        /// <summary>
+        /// Registra un nuevo usuario, cifra su clave y le asigna el Rol base (ID 1).
+        /// </summary>
+        public bool Registrar(UsuarioBE nuevoUsuario, string password)
+        {
+            // 1. Cifrado de password profesional [cite: 2026-01-28]
+            string passwordHasheado = GenerarHash(password);
+
+            // 2. Definimos el Rol Base (ID 1 por defecto en el sistema) [cite: 2026-03-05]
+            int idRolBase = 1;
+
+            // 3. Persistencia mediante DAO
+            return _usuarioDAO.Registrar(nuevoUsuario, passwordHasheado, idRolBase);
+        }
+
+        #endregion
+
+        #region "Métodos Privados"
+
         private string GenerarHash(string texto)
         {
             using (SHA256 sha256Hash = SHA256.Create())
@@ -51,5 +76,7 @@ namespace BL
                 return builder.ToString();
             }
         }
+
+        #endregion
     }
 }

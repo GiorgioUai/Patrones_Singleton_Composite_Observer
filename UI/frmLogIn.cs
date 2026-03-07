@@ -142,11 +142,50 @@ namespace UI
             Application.Exit();
         }
 
-        private void btnLogOut_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Gestiona el registro de nuevos usuarios con validación de campos y asignación de Rol automático.
+        /// </summary>
+        private void btnRegistrarse_Click(object sender, EventArgs e)
         {
-            SesionManagerBL.GetInstance().LogOut();
-            limpiarCampos();
-            MessageBox.Show(_idiomaManager.ObtenerTexto("msg_SesionCerrada"));
+            try
+            {
+                // 1. Validar que los campos no estén vacíos (Placeholder incluido)
+                if (_placeholderActivo || string.IsNullOrWhiteSpace(txtUsuario.Text) ||
+                    string.IsNullOrWhiteSpace(txtPassword.Text) ||
+                    string.IsNullOrWhiteSpace(txtNombre.Text) ||
+                    string.IsNullOrWhiteSpace(txtApellido.Text))
+                {
+                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_CamposIncompletos"),
+                                    _idiomaManager.ObtenerTexto("cap_Atencion"),
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // 2. Crear objeto BE con los datos de la UI
+                UsuarioBE nuevoUsuario = new UsuarioBE
+                {
+                    Email = txtUsuario.Text,
+                    Nombre = txtNombre.Text,
+                    Apellido = txtApellido.Text,
+                    IdIdioma = _idiomaManager.IdiomaActual.Id // Hereda el idioma activo en la app
+                };
+
+                // 3. Llamar a la BL para procesar registro, hash y Rol base
+                UsuarioBL negocio = new UsuarioBL();
+                bool exito = negocio.Registrar(nuevoUsuario, txtPassword.Text);
+
+                if (exito)
+                {
+                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_RegistroExitoso"),
+                                    _idiomaManager.ObtenerTexto("cap_Registro"),
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    limpiarCampos();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al registrar: " + ex.Message, "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         #endregion
@@ -173,10 +212,5 @@ namespace UI
         }
 
         #endregion
-
-        private void btnRegistrarse_Click(object sender, EventArgs e)
-        {
-
-        }
     }
 }

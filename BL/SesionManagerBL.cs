@@ -7,7 +7,7 @@ namespace BL
 {
     /// <summary>
     /// Gestiona la sesión activa del usuario y notifica cambios de seguridad a los observadores.
-    /// Implementa el patrón Singleton para garantizar una única sesión en la aplicación.
+    /// Implementa el patrón Singleton y valida permisos mediante el patrón Composite.
     /// </summary>
     public sealed class SesionManagerBL
     {
@@ -15,10 +15,6 @@ namespace BL
 
         private static SesionManagerBL _instance;
         private static readonly object _lock = new object();
-
-        /// <summary>
-        /// Lista de observadores (formularios) que deben reaccionar ante cambios de sesión.
-        /// </summary>
         private readonly List<ISesionObserver> _observadores = new List<ISesionObserver>();
 
         #endregion
@@ -26,7 +22,7 @@ namespace BL
         #region "Propiedades"
 
         /// <summary>
-        /// Almacena el usuario que se encuentra actualmente autenticado en el sistema.
+        /// Almacena el usuario autenticado con su respectivo árbol de Roles y Permisos.
         /// </summary>
         public UsuarioBE _Usuario { get; private set; } = null;
 
@@ -36,9 +32,6 @@ namespace BL
 
         private SesionManagerBL() { }
 
-        /// <summary>
-        /// Obtiene la instancia única del gestor de sesión utilizando Double-Check Locking.
-        /// </summary>
         public static SesionManagerBL GetInstance()
         {
             if (_instance == null)
@@ -58,31 +51,18 @@ namespace BL
 
         #region "Gestión de Observadores (Patrón Observer)"
 
-        /// <summary>
-        /// Registra un nuevo componente para recibir notificaciones de inicio o cierre de sesión.
-        /// </summary>
         public void Suscribir(ISesionObserver observador)
         {
             if (!_observadores.Contains(observador))
-            {
                 _observadores.Add(observador);
-            }
         }
 
-        /// <summary>
-        /// Elimina un componente de la lista de notificaciones.
-        /// </summary>
         public void Desuscribir(ISesionObserver observador)
         {
             if (_observadores.Contains(observador))
-            {
                 _observadores.Remove(observador);
-            }
         }
 
-        /// <summary>
-        /// Notifica a todos los observadores registrados que el estado de la sesión ha cambiado.
-        /// </summary>
         private void Notificar()
         {
             foreach (var observador in _observadores)
@@ -93,10 +73,10 @@ namespace BL
 
         #endregion
 
-        #region "Métodos de Sesión"
+        #region "Métodos de Sesión y Seguridad"
 
         /// <summary>
-        /// Establece la sesión para el usuario indicado y dispara la notificación a la UI.
+        /// Establece la sesión activa y dispara las notificaciones de seguridad.
         /// </summary>
         public void LogIn(UsuarioBE usuario)
         {
@@ -108,12 +88,51 @@ namespace BL
         }
 
         /// <summary>
-        /// Finaliza la sesión actual y dispara la notificación para limpiar la interfaz.
+        /// Finaliza la sesión actual y limpia las referencias del usuario.
         /// </summary>
         public void LogOut()
         {
             _Usuario = null;
             Notificar();
+        }
+
+        /// <summary>
+        /// Determina si el usuario actual posee un permiso específico recorriendo su jerarquía de Roles.
+        /// Implementa la búsqueda recursiva propia del patrón Composite.
+        /// </summary>
+        /// <param name="nombrePermiso">Nombre o código del Permiso a buscar.</param>
+        /// <returns>True si tiene el permiso concedido directamente o heredado por un Rol.</returns>
+        public bool TienePermiso(string nombrePermiso)
+        {
+            if (_Usuario == null || _Usuario.Permisos == null) return false;
+
+            foreach (var componente in _Usuario.Permisos)
+            {
+                if (ValidarRecursivo(componente, nombrePermiso)) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Método auxiliar para navegar recursivamente el árbol de componentes de seguridad.
+        /// </summary>
+        private bool ValidarRecursivo(ComponenteBE componente, string nombrePermiso)
+        {
+            // Caso base: El componente actual es el Permiso buscado
+            if (componente.Nombre.Equals(nombrePermiso, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Si es un Rol (Composite), buscamos dentro de sus hijos
+            if (componente is CompuestoBE compuesto)
+            {
+                foreach (var hijo in compuesto.ObtenerHijos())
+                {
+                    if (ValidarRecursivo(hijo, nombrePermiso)) return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion
