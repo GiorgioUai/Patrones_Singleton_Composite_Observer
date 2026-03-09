@@ -20,6 +20,7 @@ namespace DAL
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
+                // Sincronizado con tabla Usuarios y columnas normalizadas
                 string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios WHERE Email = @email AND Password = @pass";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
@@ -72,7 +73,7 @@ namespace DAL
 
                 try
                 {
-                    // 1. Insertar el Usuario y obtener su ID generado
+                    // 1. Insertar el Usuario y obtener su ID generado                    
                     string queryUser = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, IdIdioma) 
                                        VALUES (@nom, @ape, @email, @pass, @idioma); 
                                        SELECT SCOPE_IDENTITY();";
@@ -86,11 +87,11 @@ namespace DAL
 
                     int nuevoIdUsuario = Convert.ToInt32(cmdUser.ExecuteScalar());
 
-                    // 2. Asignar el Rol Base en la tabla intermedia (Composite)
+                    // 2. Asignar el Rol Base en la tabla intermedia (Sin guion bajo en tabla)
                     string queryRol = "INSERT INTO Usuario_Permiso (IdUsuario, IdPermiso) VALUES (@idU, @idR)";
                     SqlCommand cmdRol = new SqlCommand(queryRol, connection, transaction);
-                    cmdRol.Parameters.AddWithValue("@idU", nuevoIdUsuario); // Vinculado a IdUsuario
-                    cmdRol.Parameters.AddWithValue("@idR", pIdRolBase);     // Vinculado a IdPermiso
+                    cmdRol.Parameters.AddWithValue("@idU", nuevoIdUsuario);
+                    cmdRol.Parameters.AddWithValue("@idR", pIdRolBase);
 
                     cmdRol.ExecuteNonQuery();
 
@@ -100,7 +101,10 @@ namespace DAL
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    throw new Exception("Error al registrar usuario: Se realizó Rollback para evitar datos inconsistentes.", ex);
+                    string errorDetallado = ex.Message;
+                    if (ex.InnerException != null) errorDetallado += " -> " + ex.InnerException.Message;
+
+                    throw new Exception("Error técnico SQL: " + errorDetallado, ex);
                 }
             }
         }

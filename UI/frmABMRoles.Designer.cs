@@ -40,6 +40,7 @@
             this.btnQuitar = new System.Windows.Forms.Button();
             this.btnGuardar = new System.Windows.Forms.Button();
             this.btnCancelar = new System.Windows.Forms.Button();
+            this.btnVolver = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvListaDeRoles)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvCatalogoDeComponentes)).BeginInit();
             this.SuspendLayout();
@@ -49,7 +50,7 @@
             this.dgvListaDeRoles.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvListaDeRoles.Location = new System.Drawing.Point(23, 101);
             this.dgvListaDeRoles.Name = "dgvListaDeRoles";
-            this.dgvListaDeRoles.Size = new System.Drawing.Size(260, 250);
+            this.dgvListaDeRoles.Size = new System.Drawing.Size(260, 409);
             this.dgvListaDeRoles.TabIndex = 0;
             this.dgvListaDeRoles.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvListaDeRoles_CellClick);
             // 
@@ -85,7 +86,7 @@
             this.dgvCatalogoDeComponentes.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvCatalogoDeComponentes.Location = new System.Drawing.Point(315, 101);
             this.dgvCatalogoDeComponentes.Name = "dgvCatalogoDeComponentes";
-            this.dgvCatalogoDeComponentes.Size = new System.Drawing.Size(260, 250);
+            this.dgvCatalogoDeComponentes.Size = new System.Drawing.Size(260, 409);
             this.dgvCatalogoDeComponentes.TabIndex = 4;
             // 
             // label3
@@ -102,7 +103,7 @@
             // 
             this.tvEstructuraDelRol.Location = new System.Drawing.Point(629, 101);
             this.tvEstructuraDelRol.Name = "tvEstructuraDelRol";
-            this.tvEstructuraDelRol.Size = new System.Drawing.Size(399, 250);
+            this.tvEstructuraDelRol.Size = new System.Drawing.Size(528, 409);
             this.tvEstructuraDelRol.TabIndex = 6;
             // 
             // label4
@@ -117,7 +118,7 @@
             // 
             // btnAgregar
             // 
-            this.btnAgregar.Location = new System.Drawing.Point(315, 404);
+            this.btnAgregar.Location = new System.Drawing.Point(314, 542);
             this.btnAgregar.Name = "btnAgregar";
             this.btnAgregar.Size = new System.Drawing.Size(121, 49);
             this.btnAgregar.TabIndex = 8;
@@ -128,7 +129,7 @@
             // 
             // btnQuitar
             // 
-            this.btnQuitar.Location = new System.Drawing.Point(454, 404);
+            this.btnQuitar.Location = new System.Drawing.Point(453, 542);
             this.btnQuitar.Name = "btnQuitar";
             this.btnQuitar.Size = new System.Drawing.Size(121, 49);
             this.btnQuitar.TabIndex = 9;
@@ -139,7 +140,7 @@
             // 
             // btnGuardar
             // 
-            this.btnGuardar.Location = new System.Drawing.Point(661, 404);
+            this.btnGuardar.Location = new System.Drawing.Point(660, 542);
             this.btnGuardar.Name = "btnGuardar";
             this.btnGuardar.Size = new System.Drawing.Size(153, 49);
             this.btnGuardar.TabIndex = 10;
@@ -150,7 +151,7 @@
             // 
             // btnCancelar
             // 
-            this.btnCancelar.Location = new System.Drawing.Point(852, 404);
+            this.btnCancelar.Location = new System.Drawing.Point(851, 542);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(153, 49);
             this.btnCancelar.TabIndex = 11;
@@ -159,11 +160,23 @@
             this.btnCancelar.UseVisualStyleBackColor = true;
             this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
             // 
+            // btnVolver
+            // 
+            this.btnVolver.Location = new System.Drawing.Point(96, 542);
+            this.btnVolver.Name = "btnVolver";
+            this.btnVolver.Size = new System.Drawing.Size(121, 49);
+            this.btnVolver.TabIndex = 12;
+            this.btnVolver.Tag = "btn_Volver";
+            this.btnVolver.Text = "VOLVER";
+            this.btnVolver.UseVisualStyleBackColor = true;
+            this.btnVolver.Click += new System.EventHandler(this.btnVolver_Click);
+            // 
             // frmABMRoles
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1055, 495);
+            this.ClientSize = new System.Drawing.Size(1169, 637);
+            this.Controls.Add(this.btnVolver);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnGuardar);
             this.Controls.Add(this.btnQuitar);
@@ -202,5 +215,6 @@
         private System.Windows.Forms.Button btnQuitar;
         private System.Windows.Forms.Button btnGuardar;
         private System.Windows.Forms.Button btnCancelar;
+        private System.Windows.Forms.Button btnVolver;
     }
 }

@@ -29,10 +29,16 @@
         private void InitializeComponent()
         {
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.cerrarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.idiomasToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.españolToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.inglesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cerrarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.seguridadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.gestionDePermisosToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.gestiondeRolesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.asignarPermisosYRolesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.blanqueoDeContraseñaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cambioDeContraseñaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -40,12 +46,22 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.cerrarToolStripMenuItem,
-            this.idiomasToolStripMenuItem});
+            this.idiomasToolStripMenuItem,
+            this.seguridadToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(800, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
+            // 
+            // cerrarToolStripMenuItem
+            // 
+            this.cerrarToolStripMenuItem.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.cerrarToolStripMenuItem.Name = "cerrarToolStripMenuItem";
+            this.cerrarToolStripMenuItem.Size = new System.Drawing.Size(51, 20);
+            this.cerrarToolStripMenuItem.Tag = "menu_cerrar";
+            this.cerrarToolStripMenuItem.Text = "Cerrar";
+            this.cerrarToolStripMenuItem.Click += new System.EventHandler(this.cerrarToolStripMenuItem_Click);
             // 
             // idiomasToolStripMenuItem
             // 
@@ -61,7 +77,7 @@
             // españolToolStripMenuItem
             // 
             this.españolToolStripMenuItem.Name = "españolToolStripMenuItem";
-            this.españolToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.españolToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
             this.españolToolStripMenuItem.Tag = "menu_idioma_es";
             this.españolToolStripMenuItem.Text = "Español";
             this.españolToolStripMenuItem.Click += new System.EventHandler(this.españolToolStripMenuItem_Click);
@@ -69,19 +85,62 @@
             // inglesToolStripMenuItem
             // 
             this.inglesToolStripMenuItem.Name = "inglesToolStripMenuItem";
-            this.inglesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.inglesToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
             this.inglesToolStripMenuItem.Tag = "menu_idioma_en";
             this.inglesToolStripMenuItem.Text = "Inglés";
             this.inglesToolStripMenuItem.Click += new System.EventHandler(this.inglesToolStripMenuItem_Click);
             // 
-            // cerrarToolStripMenuItem
+            // seguridadToolStripMenuItem
             // 
-            this.cerrarToolStripMenuItem.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.cerrarToolStripMenuItem.Name = "cerrarToolStripMenuItem";
-            this.cerrarToolStripMenuItem.Size = new System.Drawing.Size(51, 20);
-            this.cerrarToolStripMenuItem.Tag = "menu_cerrar";
-            this.cerrarToolStripMenuItem.Text = "Cerrar";
-            this.cerrarToolStripMenuItem.Click += new System.EventHandler(this.cerrarToolStripMenuItem_Click);
+            this.seguridadToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.gestionDePermisosToolStripMenuItem,
+            this.gestiondeRolesToolStripMenuItem,
+            this.asignarPermisosYRolesToolStripMenuItem,
+            this.blanqueoDeContraseñaToolStripMenuItem,
+            this.cambioDeContraseñaToolStripMenuItem});
+            this.seguridadToolStripMenuItem.Name = "seguridadToolStripMenuItem";
+            this.seguridadToolStripMenuItem.Size = new System.Drawing.Size(72, 20);
+            this.seguridadToolStripMenuItem.Tag = "Seguridad_MenuPrincipal";
+            this.seguridadToolStripMenuItem.Text = "Seguridad";
+            // 
+            // gestionDePermisosToolStripMenuItem
+            // 
+            this.gestionDePermisosToolStripMenuItem.Name = "gestionDePermisosToolStripMenuItem";
+            this.gestionDePermisosToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.gestionDePermisosToolStripMenuItem.Tag = "Seguridad_GestionPermisos";
+            this.gestionDePermisosToolStripMenuItem.Text = "Gestion de Permisos";
+            this.gestionDePermisosToolStripMenuItem.Click += new System.EventHandler(this.gestionDePermisosToolStripMenuItem_Click);
+            // 
+            // gestiondeRolesToolStripMenuItem
+            // 
+            this.gestiondeRolesToolStripMenuItem.Name = "gestiondeRolesToolStripMenuItem";
+            this.gestiondeRolesToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.gestiondeRolesToolStripMenuItem.Tag = "Seguridad_GestionRoles";
+            this.gestiondeRolesToolStripMenuItem.Text = "Gestion de Roles";
+            this.gestiondeRolesToolStripMenuItem.Click += new System.EventHandler(this.gestionDeRolesToolStripMenuItem_Click);
+            // 
+            // asignarPermisosYRolesToolStripMenuItem
+            // 
+            this.asignarPermisosYRolesToolStripMenuItem.Name = "asignarPermisosYRolesToolStripMenuItem";
+            this.asignarPermisosYRolesToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.asignarPermisosYRolesToolStripMenuItem.Tag = "Seguridad_Asignacion";
+            this.asignarPermisosYRolesToolStripMenuItem.Text = "Asignar Permisos y Roles";
+            this.asignarPermisosYRolesToolStripMenuItem.Click += new System.EventHandler(this.asignarPermisosYRolesToolStripMenuItem_Click);
+            // 
+            // blanqueoDeContraseñaToolStripMenuItem
+            // 
+            this.blanqueoDeContraseñaToolStripMenuItem.Name = "blanqueoDeContraseñaToolStripMenuItem";
+            this.blanqueoDeContraseñaToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.blanqueoDeContraseñaToolStripMenuItem.Tag = "Seguridad_BlanqueoPass";
+            this.blanqueoDeContraseñaToolStripMenuItem.Text = "Blanqueo de Contraseña";
+            this.blanqueoDeContraseñaToolStripMenuItem.Click += new System.EventHandler(this.blanqueoDeContrasenaToolStripMenuItem_Click);
+            // 
+            // cambioDeContraseñaToolStripMenuItem
+            // 
+            this.cambioDeContraseñaToolStripMenuItem.Name = "cambioDeContraseñaToolStripMenuItem";
+            this.cambioDeContraseñaToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.cambioDeContraseñaToolStripMenuItem.Tag = "Usuario_CambioPass";
+            this.cambioDeContraseñaToolStripMenuItem.Text = "Cambio de Contraseña";
             // 
             // frmPrincipal
             // 
@@ -111,5 +170,11 @@
         private System.Windows.Forms.ToolStripMenuItem españolToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem inglesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem cerrarToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem seguridadToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem gestionDePermisosToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem gestiondeRolesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem asignarPermisosYRolesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem blanqueoDeContraseñaToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem cambioDeContraseñaToolStripMenuItem;
     }
 }

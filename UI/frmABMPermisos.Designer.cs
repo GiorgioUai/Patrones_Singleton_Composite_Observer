@@ -35,6 +35,7 @@
             this.btnGuardar = new System.Windows.Forms.Button();
             this.btnEliminar = new System.Windows.Forms.Button();
             this.btnCancelar = new System.Windows.Forms.Button();
+            this.btnVolver = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvListaDePermisos)).BeginInit();
             this.SuspendLayout();
             // 
@@ -43,7 +44,7 @@
             this.dgvListaDePermisos.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvListaDePermisos.Location = new System.Drawing.Point(272, 76);
             this.dgvListaDePermisos.Name = "dgvListaDePermisos";
-            this.dgvListaDePermisos.Size = new System.Drawing.Size(265, 298);
+            this.dgvListaDePermisos.Size = new System.Drawing.Size(288, 461);
             this.dgvListaDePermisos.TabIndex = 0;
             // 
             // label1
@@ -59,7 +60,7 @@
             // lblNombreDelPermiso
             // 
             this.lblNombreDelPermiso.AutoSize = true;
-            this.lblNombreDelPermiso.Location = new System.Drawing.Point(44, 60);
+            this.lblNombreDelPermiso.Location = new System.Drawing.Point(45, 62);
             this.lblNombreDelPermiso.Name = "lblNombreDelPermiso";
             this.lblNombreDelPermiso.Size = new System.Drawing.Size(101, 13);
             this.lblNombreDelPermiso.TabIndex = 2;
@@ -68,14 +69,14 @@
             // 
             // txtPermiso
             // 
-            this.txtPermiso.Location = new System.Drawing.Point(45, 76);
+            this.txtPermiso.Location = new System.Drawing.Point(46, 78);
             this.txtPermiso.Name = "txtPermiso";
             this.txtPermiso.Size = new System.Drawing.Size(194, 20);
             this.txtPermiso.TabIndex = 3;
             // 
             // btnGuardar
             // 
-            this.btnGuardar.Location = new System.Drawing.Point(45, 123);
+            this.btnGuardar.Location = new System.Drawing.Point(46, 125);
             this.btnGuardar.Name = "btnGuardar";
             this.btnGuardar.Size = new System.Drawing.Size(102, 53);
             this.btnGuardar.TabIndex = 4;
@@ -86,7 +87,7 @@
             // 
             // btnEliminar
             // 
-            this.btnEliminar.Location = new System.Drawing.Point(47, 207);
+            this.btnEliminar.Location = new System.Drawing.Point(44, 248);
             this.btnEliminar.Name = "btnEliminar";
             this.btnEliminar.Size = new System.Drawing.Size(102, 53);
             this.btnEliminar.TabIndex = 5;
@@ -97,7 +98,7 @@
             // 
             // btnCancelar
             // 
-            this.btnCancelar.Location = new System.Drawing.Point(47, 302);
+            this.btnCancelar.Location = new System.Drawing.Point(48, 371);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(102, 53);
             this.btnCancelar.TabIndex = 6;
@@ -106,11 +107,23 @@
             this.btnCancelar.UseVisualStyleBackColor = true;
             this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
             // 
+            // btnVolver
+            // 
+            this.btnVolver.Location = new System.Drawing.Point(48, 484);
+            this.btnVolver.Name = "btnVolver";
+            this.btnVolver.Size = new System.Drawing.Size(102, 53);
+            this.btnVolver.TabIndex = 7;
+            this.btnVolver.Tag = "btn_Volver";
+            this.btnVolver.Text = "VOLVER";
+            this.btnVolver.UseVisualStyleBackColor = true;
+            this.btnVolver.Click += new System.EventHandler(this.btnVolver_Click);
+            // 
             // frmABMPermisos
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(595, 420);
+            this.ClientSize = new System.Drawing.Size(617, 573);
+            this.Controls.Add(this.btnVolver);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnEliminar);
             this.Controls.Add(this.btnGuardar);
@@ -122,6 +135,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Tag = "frm_ABM_de_Permisos";
             this.Text = "ABM de Permisos";
+            this.Load += new System.EventHandler(this.frmABMPermisos_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dgvListaDePermisos)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -137,5 +151,6 @@
         private System.Windows.Forms.Button btnGuardar;
         private System.Windows.Forms.Button btnEliminar;
         private System.Windows.Forms.Button btnCancelar;
+        private System.Windows.Forms.Button btnVolver;
     }
 }

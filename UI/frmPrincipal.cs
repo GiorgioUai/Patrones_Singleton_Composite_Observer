@@ -51,7 +51,6 @@ namespace UI
         /// </summary>
         private void frmPrincipal_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // 1. Verificamos si hay una sesión activa para pedir confirmación
             if (_sesionManager._Usuario != null)
             {
                 string mensaje = _idiomaManager.ObtenerTexto("msg_ConfirmarLogout");
@@ -61,16 +60,13 @@ namespace UI
 
                 if (respuesta == DialogResult.No)
                 {
-                    // Si el usuario se arrepiente, cancelamos el cierre de la ventana
                     e.Cancel = true;
                     return;
                 }
 
-                // 2. Si confirma (SI), procedemos a cerrar la sesión lógica antes de que el form desaparezca
                 _sesionManager.LogOut();
             }
 
-            // 3. Desuscripción de ambos gestores para liberar recursos y evitar fugas de memoria
             _sesionManager.Desuscribir(this);
             _idiomaManager.Desuscribir(this);
         }
@@ -115,6 +111,36 @@ namespace UI
 
         #endregion
 
+        #region "Eventos del Menú Seguridad"
+
+        private void gestionDePermisosToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmABMPermisos formPermisos = new frmABMPermisos();
+            // formPermisos.MdiParent = this; // Opcional: si activaste IsMdiContainer
+            formPermisos.ShowDialog();
+        }
+
+        private void gestionDeRolesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmABMRoles formRoles = new frmABMRoles();
+            // formRoles.MdiParent = this; // Opcional: si activaste IsMdiContainer
+            formRoles.ShowDialog();
+        }
+
+        private void asignarPermisosYRolesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Futura implementación: frmAsignarPermisos form = new frmAsignarPermisos();
+            MessageBox.Show("Módulo en desarrollo.", "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void blanqueoDeContrasenaToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Futura implementación: frmBlanqueo form = new frmBlanqueo();
+            MessageBox.Show("Módulo en desarrollo.", "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        #endregion
+
         #region "Eventos de Cambio de Idioma (Menú)"
 
         private void españolToolStripMenuItem_Click(object sender, EventArgs e)
@@ -131,15 +157,10 @@ namespace UI
 
         #region "Cierre de Sesión"
 
-        /// <summary>
-        /// Al cerrar desde el menú, simplemente invocamos el cierre del formulario.
-        /// La confirmación y el LogOut se gestionan automáticamente en FormClosing.
-        /// </summary>
         private void cerrarToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Close();
 
-            // Si el cierre fue exitoso (el usuario confirmó), mostramos el login limpio
             if (_sesionManager._Usuario == null)
             {
                 frmLogIn login = (frmLogIn)Application.OpenForms["frmLogIn"];

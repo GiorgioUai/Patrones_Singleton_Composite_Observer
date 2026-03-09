@@ -25,7 +25,7 @@ namespace DAL
 
             using (SqlConnection cn = new SqlConnection(_connectionString))
             {
-                // Agregamos el Id a la consulta para persistencia
+                // Consulta a la tabla Idioma (PascalCase según image_3f4cfc)
                 string query = "SELECT Id, Nombre FROM Idioma";
 
                 using (SqlCommand cmd = new SqlCommand(query, cn))
@@ -35,7 +35,6 @@ namespace DAL
                     {
                         while (reader.Read())
                         {
-                            // Creamos el objeto de entidad y lo agregamos a la lista
                             idiomas.Add(new IdiomaBE
                             {
                                 Id = Convert.ToInt32(reader["Id"]),
@@ -62,27 +61,35 @@ namespace DAL
             Dictionary<string, string> traducciones = new Dictionary<string, string>();
 
             using (SqlConnection cn = new SqlConnection(_connectionString))
-            {
-                string query = @"SELECT e.Nombre as Tag, t.Texto 
-                                 FROM Traduccion t
-                                 INNER JOIN Etiqueta e ON t.Id_Etiqueta = e.Id
-                                 INNER JOIN Idioma i ON t.Id_Idioma = i.Id
-                                 WHERE i.Nombre = @idioma";
+            {             
+                string query = @"SELECT e.Nombre as Tag, t.Texto FROM Traduccion t INNER JOIN Etiqueta e ON t.IdEtiqueta = e.Id INNER JOIN Idioma i ON t.IdIdioma = i.Id WHERE i.Nombre = @idioma";
 
                 using (SqlCommand cmd = new SqlCommand(query, cn))
                 {
                     cmd.Parameters.AddWithValue("@idioma", nombreIdioma);
-                    cn.Open();
 
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    try
                     {
-                        while (reader.Read())
+                        cn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            traducciones.Add(
-                                reader["Tag"].ToString(),
-                                reader["Texto"].ToString()
-                            );
+                            while (reader.Read())
+                            {
+                                string tag = reader["Tag"].ToString();
+                                string texto = reader["Texto"].ToString();
+
+                                // Validación de integridad para evitar duplicados en el diccionario
+                                if (!traducciones.ContainsKey(tag))
+                                {
+                                    traducciones.Add(tag, texto);
+                                }
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Lógica para debug técnico
+                        throw new Exception("Error en DAL al recuperar traducciones para el idioma: " + nombreIdioma, ex);
                     }
                 }
             }

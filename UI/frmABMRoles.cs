@@ -26,6 +26,7 @@ namespace UI
         public frmABMRoles()
         {
             InitializeComponent();
+            ConfigurarEsteticaFormulario();
         }
 
         #endregion
@@ -34,6 +35,7 @@ namespace UI
 
         private void frmABMRoles_Load(object sender, EventArgs e)
         {
+            ConfigurarGrillasVisuales();
             ActualizarGrillas();
         }
 
@@ -41,7 +43,7 @@ namespace UI
         {
             if (e.RowIndex >= 0)
             {
-                // Se asigna la referencia del objeto seleccionado para edición en RAM
+                // Recuperamos el Rol para edición en RAM
                 _rolSeleccionado = (CompuestoBE)dgvListaDeRoles.Rows[e.RowIndex].DataBoundItem;
                 txtDatosDelRol.Text = _rolSeleccionado.Nombre;
 
@@ -59,17 +61,16 @@ namespace UI
 
             ComponenteBE seleccionado = (ComponenteBE)dgvCatalogoDeComponentes.CurrentRow.DataBoundItem;
 
-            // Validación de integridad: Evita recursividad infinita (que un rol se contenga a sí mismo)
+            // Validación de integridad: Evita que un rol se contenga a sí mismo o genere ciclos
             string contenedor = _permisoBL.ObtenerContenedorRecursivo(_rolSeleccionado, seleccionado.Id);
 
             if (contenedor != null)
             {
-                MessageBox.Show($"Operación inválida: El componente ya está integrado en la estructura de '{contenedor}'.",
+                MessageBox.Show($"Operación inválida: El componente ya es parte de '{contenedor}'.",
                                 "Validación de Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Aplicación del patrón Composite: El objeto gestiona su estado interno (Agregado)
             _rolSeleccionado.AgregarHijo(seleccionado);
             ActualizarEstructuraVisual(_rolSeleccionado);
         }
@@ -78,10 +79,9 @@ namespace UI
         {
             if (tvEstructuraDelRol.SelectedNode != null && _rolSeleccionado != null)
             {
-                // Recuperación del objeto de negocio asociado al nodo visual (Tag)
                 ComponenteBE componenteAQuitar = (ComponenteBE)tvEstructuraDelRol.SelectedNode.Tag;
 
-                // Remoción lógica: El objeto se marca para eliminación (Eliminado)
+                // El objeto Composite gestiona su remoción lógica
                 _rolSeleccionado.QuitarHijo(componenteAQuitar);
                 ActualizarEstructuraVisual(_rolSeleccionado);
             }
@@ -93,10 +93,8 @@ namespace UI
             {
                 if (_rolSeleccionado != null)
                 {
-                    // Persistencia transaccional de los cambios realizados en memoria (RAM)
                     _permisoBL.GuardarRol(_rolSeleccionado);
-
-                    MessageBox.Show("Estructura de seguridad actualizada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Estructura de seguridad persistida con éxito.", "Sincronización", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     FinalizarEdicion();
                     ActualizarGrillas();
@@ -104,8 +102,13 @@ namespace UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al persistir cambios: {ex.Message}", "Error Crítico", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error de persistencia: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void btnVolver_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
 
         private void btnCancelar_Click(object sender, EventArgs e)
@@ -115,7 +118,31 @@ namespace UI
 
         #endregion
 
-        #region "Métodos de Soporte Visual (Recursividad)"
+        #region "Métodos de Soporte Visual (Recursividad y UX)"
+
+        private void ConfigurarGrillasVisuales()
+        {
+            // Limpieza de dgvListaDeRoles
+            dgvListaDeRoles.AutoGenerateColumns = false;
+            dgvListaDeRoles.Columns.Clear();
+            dgvListaDeRoles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Id", HeaderText = "ID", Width = 40 });
+            dgvListaDeRoles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Nombre", HeaderText = "Rol", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+
+            // Limpieza de dgvCatalogoDeComponentes
+            dgvCatalogoDeComponentes.AutoGenerateColumns = false;
+            dgvCatalogoDeComponentes.Columns.Clear();
+            dgvCatalogoDeComponentes.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Id", HeaderText = "ID", Width = 40 });
+            dgvCatalogoDeComponentes.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Nombre", HeaderText = "Componente Disponible", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        }
+
+        private void ConfigurarEsteticaFormulario()
+        {
+            this.Text = "Gestión de Roles y Estructura Jerárquica";
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+
+            if (btnVolver != null) btnVolver.Tag = "btn_Volver";
+        }
 
         private void ActualizarGrillas()
         {
@@ -123,17 +150,15 @@ namespace UI
             {
                 var todosLosComponentes = _permisoBL.ListarTodo();
 
-                // Catálogo de componentes disponibles
                 dgvCatalogoDeComponentes.DataSource = null;
                 dgvCatalogoDeComponentes.DataSource = todosLosComponentes;
 
-                // Lista de Roles (Compuestos) existentes
                 dgvListaDeRoles.DataSource = null;
                 dgvListaDeRoles.DataSource = todosLosComponentes.Where(x => x is CompuestoBE).ToList();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error de conectividad: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error de datos: {ex.Message}", "Conectividad", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -144,9 +169,6 @@ namespace UI
             tvEstructuraDelRol.Nodes.Clear();
         }
 
-        /// <summary>
-        /// Sincroniza la visualización del TreeView con el estado del objeto Composite.
-        /// </summary>
         private void ActualizarEstructuraVisual(CompuestoBE pRol)
         {
             tvEstructuraDelRol.Nodes.Clear();
@@ -160,15 +182,12 @@ namespace UI
             tvEstructuraDelRol.ExpandAll();
         }
 
-        /// <summary>
-        /// Recorre la jerarquía Composite de forma recursiva para generar los nodos visuales.
-        /// </summary>
         private void GenerarNodosRecursivos(TreeNode padreVisual, ComponenteBE padreLogico)
         {
             foreach (var hijo in padreLogico.ObtenerHijos())
             {
                 TreeNode nuevoNodo = new TreeNode(hijo.Nombre);
-                nuevoNodo.Tag = hijo; // Importante para recuperar el objeto al quitarlo
+                nuevoNodo.Tag = hijo;
                 padreVisual.Nodes.Add(nuevoNodo);
 
                 if (hijo is CompuestoBE)
