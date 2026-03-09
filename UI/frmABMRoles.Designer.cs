@@ -41,6 +41,9 @@
             this.btnGuardar = new System.Windows.Forms.Button();
             this.btnCancelar = new System.Windows.Forms.Button();
             this.btnVolver = new System.Windows.Forms.Button();
+            this.btnEliminar = new System.Windows.Forms.Button();
+            this.btnModificar = new System.Windows.Forms.Button();
+            this.btnNuevo = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvListaDeRoles)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvCatalogoDeComponentes)).BeginInit();
             this.SuspendLayout();
@@ -123,7 +126,7 @@
             this.btnAgregar.Size = new System.Drawing.Size(121, 49);
             this.btnAgregar.TabIndex = 8;
             this.btnAgregar.Tag = "btn_Agregar";
-            this.btnAgregar.Text = "Agregar >>";
+            this.btnAgregar.Text = "AGREGAR >>";
             this.btnAgregar.UseVisualStyleBackColor = true;
             this.btnAgregar.Click += new System.EventHandler(this.btnAgregar_Click);
             // 
@@ -134,48 +137,84 @@
             this.btnQuitar.Size = new System.Drawing.Size(121, 49);
             this.btnQuitar.TabIndex = 9;
             this.btnQuitar.Tag = "btn_Quitar";
-            this.btnQuitar.Text = "<< Quitar";
+            this.btnQuitar.Text = "<< QUITAR";
             this.btnQuitar.UseVisualStyleBackColor = true;
             this.btnQuitar.Click += new System.EventHandler(this.btnQuitar_Click);
             // 
             // btnGuardar
             // 
-            this.btnGuardar.Location = new System.Drawing.Point(660, 542);
+            this.btnGuardar.Location = new System.Drawing.Point(818, 542);
             this.btnGuardar.Name = "btnGuardar";
             this.btnGuardar.Size = new System.Drawing.Size(153, 49);
             this.btnGuardar.TabIndex = 10;
             this.btnGuardar.Tag = "btn_Guardar";
-            this.btnGuardar.Text = "Guardar";
+            this.btnGuardar.Text = "GUARDAR";
             this.btnGuardar.UseVisualStyleBackColor = true;
             this.btnGuardar.Click += new System.EventHandler(this.btnGuardar_Click);
             // 
             // btnCancelar
             // 
-            this.btnCancelar.Location = new System.Drawing.Point(851, 542);
+            this.btnCancelar.Location = new System.Drawing.Point(638, 542);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(153, 49);
             this.btnCancelar.TabIndex = 11;
             this.btnCancelar.Tag = "btn_Cancelar";
-            this.btnCancelar.Text = "Cancelar";
+            this.btnCancelar.Text = "CANCELAR";
             this.btnCancelar.UseVisualStyleBackColor = true;
             this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
             // 
             // btnVolver
             // 
-            this.btnVolver.Location = new System.Drawing.Point(96, 542);
+            this.btnVolver.Location = new System.Drawing.Point(1004, 542);
             this.btnVolver.Name = "btnVolver";
-            this.btnVolver.Size = new System.Drawing.Size(121, 49);
+            this.btnVolver.Size = new System.Drawing.Size(153, 49);
             this.btnVolver.TabIndex = 12;
             this.btnVolver.Tag = "btn_Volver";
             this.btnVolver.Text = "VOLVER";
             this.btnVolver.UseVisualStyleBackColor = true;
             this.btnVolver.Click += new System.EventHandler(this.btnVolver_Click);
             // 
+            // btnEliminar
+            // 
+            this.btnEliminar.Location = new System.Drawing.Point(202, 542);
+            this.btnEliminar.Name = "btnEliminar";
+            this.btnEliminar.Size = new System.Drawing.Size(81, 49);
+            this.btnEliminar.TabIndex = 13;
+            this.btnEliminar.Tag = "btn_Eliminar";
+            this.btnEliminar.Text = "ELIMINAR";
+            this.btnEliminar.UseVisualStyleBackColor = true;
+            this.btnEliminar.Click += new System.EventHandler(this.btnEliminar_Click);
+            // 
+            // btnModificar
+            // 
+            this.btnModificar.Location = new System.Drawing.Point(115, 542);
+            this.btnModificar.Name = "btnModificar";
+            this.btnModificar.Size = new System.Drawing.Size(81, 49);
+            this.btnModificar.TabIndex = 14;
+            this.btnModificar.Tag = "btn_Modificar";
+            this.btnModificar.Text = "MODIFICAR";
+            this.btnModificar.UseVisualStyleBackColor = true;
+            this.btnModificar.Click += new System.EventHandler(this.btnModificar_Click);
+            // 
+            // btnNuevo
+            // 
+            this.btnNuevo.Location = new System.Drawing.Point(23, 545);
+            this.btnNuevo.Name = "btnNuevo";
+            this.btnNuevo.Size = new System.Drawing.Size(81, 46);
+            this.btnNuevo.TabIndex = 15;
+            this.btnNuevo.Tag = "btn_Nuevo";
+            this.btnNuevo.Text = "NUEVO";
+            this.btnNuevo.UseVisualStyleBackColor = true;
+            this.btnNuevo.Click += new System.EventHandler(this.btnNuevo_Click);
+            // 
             // frmABMRoles
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1169, 637);
+            this.Controls.Add(this.btnNuevo);
+            this.Controls.Add(this.btnModificar);
+            this.Controls.Add(this.btnEliminar);
             this.Controls.Add(this.btnVolver);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnGuardar);
@@ -216,5 +255,8 @@
         private System.Windows.Forms.Button btnGuardar;
         private System.Windows.Forms.Button btnCancelar;
         private System.Windows.Forms.Button btnVolver;
+        private System.Windows.Forms.Button btnEliminar;
+        private System.Windows.Forms.Button btnModificar;
+        private System.Windows.Forms.Button btnNuevo;
     }
 }

@@ -18,7 +18,8 @@ namespace BE
         {
             SinCambio,
             Agregado,
-            Eliminado
+            Eliminado,
+            Modificado
         }
 
         #endregion

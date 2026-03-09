@@ -1,26 +1,20 @@
 ﻿using BE;
 using DAL.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 
 namespace DAL
 {
-    /// <summary>
-    /// Clase de Acceso a Datos para la entidad Usuario.
-    /// Implementa la persistencia y carga de seguridad (Composite).
-    /// </summary>
     public class UsuarioDAO : DAO, IUsuarioDAO
     {
-        #region "Métodos Públicos"
-
         public UsuarioBE ValidarAcceso(string email, string passwordHash)
         {
             UsuarioBE usuarioEncontrado = null;
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                // Sincronizado con tabla Usuarios y columnas normalizadas
                 string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios WHERE Email = @email AND Password = @pass";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
@@ -45,25 +39,68 @@ namespace DAL
                                 };
                             }
                         }
+
+                        // Si el usuario existe, cargamos sus permisos usando la misma conexión abierta
+                        if (usuarioEncontrado != null)
+                        {
+                            CargarSeguridadUsuario(usuarioEncontrado, connection);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception("Error crítico en DAL: No se pudo validar el acceso.", ex);
+                        throw new Exception("Error crítico en el proceso de Login.", ex);
                     }
                 }
-            }
-
-            if (usuarioEncontrado != null)
-            {
-                CargarSeguridadUsuario(usuarioEncontrado);
             }
 
             return usuarioEncontrado;
         }
 
-        /// <summary>
-        /// Inserta un usuario y su relación con el Rol Base en una transacción atómica.
-        /// </summary>
+        private void CargarSeguridadUsuario(UsuarioBE pUsuario, SqlConnection connection)
+        {
+            try
+            {
+                // Usamos la lógica de PermisoDAL inyectando la conexión compartida
+                PermisoDAL permisoDAL = new PermisoDAL();
+
+                // Obtenemos los roles/permisos directos del usuario
+                string query = @"SELECT p.Id, p.Nombre, p.EsFamilia 
+                                 FROM Permiso p 
+                                 INNER JOIN Usuario_Permiso up ON p.Id = up.IdPermiso 
+                                 WHERE up.IdUsuario = @id";
+
+                var componentes = new List<ComponenteBE>();
+                using (SqlCommand cmd = new SqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@id", pUsuario.Id);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            bool esF = Convert.ToBoolean(reader["EsFamilia"]);
+                            ComponenteBE c = esF ? (ComponenteBE)new CompuestoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() } :
+                                                   (ComponenteBE)new PermisoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() };
+                            componentes.Add(c);
+                        }
+                    }
+                }
+
+                // Disparamos la recursividad para cada componente compuesto
+                foreach (var comp in componentes)
+                {
+                    if (comp is CompuestoBE)
+                    {
+                        permisoDAL.LlenarHijos(comp, connection);
+                    }
+                    pUsuario.AgregarPermiso(comp);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al reconstruir el árbol de seguridad del usuario.", ex);
+            }
+        }
+
         public bool Registrar(UsuarioBE pUsuario, string pPasswordHash, int pIdRolBase)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -73,7 +110,6 @@ namespace DAL
 
                 try
                 {
-                    // 1. Insertar el Usuario y obtener su ID generado                    
                     string queryUser = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, IdIdioma) 
                                        VALUES (@nom, @ape, @email, @pass, @idioma); 
                                        SELECT SCOPE_IDENTITY();";
@@ -87,50 +123,21 @@ namespace DAL
 
                     int nuevoIdUsuario = Convert.ToInt32(cmdUser.ExecuteScalar());
 
-                    // 2. Asignar el Rol Base en la tabla intermedia (Sin guion bajo en tabla)
                     string queryRol = "INSERT INTO Usuario_Permiso (IdUsuario, IdPermiso) VALUES (@idU, @idR)";
                     SqlCommand cmdRol = new SqlCommand(queryRol, connection, transaction);
                     cmdRol.Parameters.AddWithValue("@idU", nuevoIdUsuario);
                     cmdRol.Parameters.AddWithValue("@idR", pIdRolBase);
 
                     cmdRol.ExecuteNonQuery();
-
                     transaction.Commit();
                     return true;
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    string errorDetallado = ex.Message;
-                    if (ex.InnerException != null) errorDetallado += " -> " + ex.InnerException.Message;
-
-                    throw new Exception("Error técnico SQL: " + errorDetallado, ex);
+                    throw new Exception("Error técnico en el registro de usuario.", ex);
                 }
             }
         }
-
-        #endregion
-
-        #region "Métodos Privados de Soporte (Seguridad)"
-
-        private void CargarSeguridadUsuario(UsuarioBE pUsuario)
-        {
-            try
-            {
-                PermisoDAL permisoDAL = new PermisoDAL();
-                var componentes = permisoDAL.ObtenerPermisosUsuario(pUsuario.Id);
-
-                foreach (var comp in componentes)
-                {
-                    pUsuario.AgregarPermiso(comp);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error al cargar la estructura de Roles del usuario.", ex);
-            }
-        }
-
-        #endregion
     }
 }

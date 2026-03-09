@@ -7,54 +7,41 @@ using DAL.Interfaces;
 
 namespace DAL
 {
-    /// <summary>
-    /// Gestiona la persistencia de componentes de seguridad (Permisos y Roles) en la base de datos SQL.
-    /// Implementa el patrón Data Access Object para manejar la estructura Composite.
-    /// </summary>
     public class PermisoDAL : DAO, IPermisoDAL
     {
-        #region "Métodos de Escritura (Alta y Baja)"
-
-        /// <summary>
-        /// Inserta un nuevo permiso simple (Patente) en la base de datos con EsFamilia = 0.
-        /// </summary>
+        #region "Escritura"
         public void GuardarPermisoSimple(PermisoBE pPermiso)
         {
             using (SqlConnection cn = new SqlConnection(_connectionString))
             {
-                // Sincronizado con columna EsFamilia
-                string query = "INSERT INTO Permiso (Nombre, EsFamilia) VALUES (@nombre, 0); SELECT SCOPE_IDENTITY();";
-
+                string query = pPermiso.Id == 0 ?
+                    "INSERT INTO Permiso (Nombre, EsFamilia) VALUES (@nombre, 0); SELECT SCOPE_IDENTITY();" :
+                    "UPDATE Permiso SET Nombre = @nombre WHERE Id = @id";
                 using (SqlCommand cmd = new SqlCommand(query, cn))
                 {
                     cmd.Parameters.AddWithValue("@nombre", pPermiso.Nombre);
+                    if (pPermiso.Id > 0) cmd.Parameters.AddWithValue("@id", pPermiso.Id);
                     cn.Open();
-                    pPermiso.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                    if (pPermiso.Id == 0) pPermiso.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                    else cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        /// <summary>
-        /// Elimina un permiso de la tabla base. 
-        /// Nota: La integridad referencial en SQL debe manejar las relaciones en tablas intermedias.
-        /// </summary>
-        public void EliminarPermiso(PermisoBE pPermiso)
+        public void EliminarPermiso(ComponenteBE pComponente)
         {
             using (SqlConnection cn = new SqlConnection(_connectionString))
             {
                 string query = "DELETE FROM Permiso WHERE Id = @id";
                 using (SqlCommand cmd = new SqlCommand(query, cn))
                 {
-                    cmd.Parameters.AddWithValue("@id", pPermiso.Id);
+                    cmd.Parameters.AddWithValue("@id", pComponente.Id);
                     cn.Open();
                     cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        /// <summary>
-        /// Persiste las relaciones entre Roles y sus hijos (Permisos o Roles) en Permiso_Permiso.
-        /// </summary>
         public void GuardarEstructuraRol(CompuestoBE pRol)
         {
             using (SqlConnection cn = new SqlConnection(_connectionString))
@@ -63,22 +50,26 @@ namespace DAL
                 SqlTransaction txn = cn.BeginTransaction();
                 try
                 {
+                    string queryRol = pRol.Id == 0 ?
+                        "INSERT INTO Permiso (Nombre, EsFamilia) VALUES (@nombre, 1); SELECT SCOPE_IDENTITY();" :
+                        "UPDATE Permiso SET Nombre = @nombre WHERE Id = @id";
+                    using (SqlCommand cmd = new SqlCommand(queryRol, cn, txn))
+                    {
+                        cmd.Parameters.AddWithValue("@nombre", pRol.Nombre);
+                        if (pRol.Id > 0) cmd.Parameters.AddWithValue("@id", pRol.Id);
+                        if (pRol.Id == 0) pRol.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                        else cmd.ExecuteNonQuery();
+                    }
+
                     foreach (var hijo in pRol.ObtenerEstructuraCompleta())
                     {
-                        if (hijo.Estado == ComponenteBE.EstadoEntidad.Agregado)
+                        string q = "";
+                        if (hijo.Estado == ComponenteBE.EstadoEntidad.Agregado) q = "INSERT INTO Permiso_Permiso (IdPadre, IdHijo) VALUES (@padre, @hijo)";
+                        else if (hijo.Estado == ComponenteBE.EstadoEntidad.Eliminado) q = "DELETE FROM Permiso_Permiso WHERE IdPadre = @padre AND IdHijo = @hijo";
+
+                        if (!string.IsNullOrEmpty(q))
                         {
-                            string query = "INSERT INTO Permiso_Permiso (IdPadre, IdHijo) VALUES (@padre, @hijo)";
-                            using (SqlCommand cmd = new SqlCommand(query, cn, txn))
-                            {
-                                cmd.Parameters.AddWithValue("@padre", pRol.Id);
-                                cmd.Parameters.AddWithValue("@hijo", hijo.Id);
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        else if (hijo.Estado == ComponenteBE.EstadoEntidad.Eliminado)
-                        {
-                            string query = "DELETE FROM Permiso_Permiso WHERE IdPadre = @padre AND IdHijo = @hijo";
-                            using (SqlCommand cmd = new SqlCommand(query, cn, txn))
+                            using (SqlCommand cmd = new SqlCommand(q, cn, txn))
                             {
                                 cmd.Parameters.AddWithValue("@padre", pRol.Id);
                                 cmd.Parameters.AddWithValue("@hijo", hijo.Id);
@@ -88,21 +79,12 @@ namespace DAL
                     }
                     txn.Commit();
                 }
-                catch (Exception)
-                {
-                    txn.Rollback();
-                    throw;
-                }
+                catch { txn.Rollback(); throw; }
             }
         }
-
         #endregion
 
-        #region "Métodos de Lectura y Carga Composite"
-
-        /// <summary>
-        /// Lista únicamente los permisos simples (Hoja).
-        /// </summary>
+        #region "Lectura"
         public List<PermisoBE> ListarSimples()
         {
             List<PermisoBE> lista = new List<PermisoBE>();
@@ -114,23 +96,13 @@ namespace DAL
                     cn.Open();
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        while (reader.Read())
-                        {
-                            lista.Add(new PermisoBE
-                            {
-                                Id = Convert.ToInt32(reader["Id"]),
-                                Nombre = reader["Nombre"].ToString()
-                            });
-                        }
+                        while (reader.Read()) lista.Add(new PermisoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() });
                     }
                 }
             }
             return lista;
         }
 
-        /// <summary>
-        /// Obtiene la lista completa de componentes sin cargar su jerarquía.
-        /// </summary>
         public List<ComponenteBE> ListarTodo()
         {
             List<ComponenteBE> lista = new List<ComponenteBE>();
@@ -144,12 +116,9 @@ namespace DAL
                     {
                         while (reader.Read())
                         {
-                            bool esFamilia = Convert.ToBoolean(reader["EsFamilia"]);
-                            ComponenteBE c = esFamilia ?
-                                (ComponenteBE)new CompuestoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() } :
-                                (ComponenteBE)new PermisoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() };
-
-                            lista.Add(c);
+                            bool esF = Convert.ToBoolean(reader["EsFamilia"]);
+                            lista.Add(esF ? (ComponenteBE)new CompuestoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() } :
+                                            (ComponenteBE)new PermisoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() });
                         }
                     }
                 }
@@ -157,19 +126,12 @@ namespace DAL
             return lista;
         }
 
-        /// <summary>
-        /// Recupera los componentes asignados a un usuario y dispara la carga recursiva de hijos.
-        /// </summary>
         public List<ComponenteBE> ObtenerPermisosUsuario(int usuarioId)
         {
             List<ComponenteBE> lista = new List<ComponenteBE>();
             using (SqlConnection cn = new SqlConnection(_connectionString))
             {
-                string query = @"SELECT p.Id, p.Nombre, p.EsFamilia 
-                                 FROM Permiso p 
-                                 INNER JOIN Usuario_Permiso up ON p.Id = up.IdPermiso 
-                                 WHERE up.IdUsuario = @id";
-
+                string query = @"SELECT p.Id, p.Nombre, p.EsFamilia FROM Permiso p INNER JOIN Usuario_Permiso up ON p.Id = up.IdPermiso WHERE up.IdUsuario = @id";
                 using (SqlCommand cmd = new SqlCommand(query, cn))
                 {
                     cmd.Parameters.AddWithValue("@id", usuarioId);
@@ -178,17 +140,11 @@ namespace DAL
                     {
                         while (reader.Read())
                         {
-                            int id = Convert.ToInt32(reader["Id"]);
-                            string nombre = reader["Nombre"].ToString();
-                            bool esFamilia = Convert.ToBoolean(reader["EsFamilia"]);
-
-                            ComponenteBE componente = esFamilia ?
-                                (ComponenteBE)new CompuestoBE { Id = id, Nombre = nombre } :
-                                (ComponenteBE)new PermisoBE { Id = id, Nombre = nombre };
-
-                            if (esFamilia) LlenarHijos(componente);
-
-                            lista.Add(componente);
+                            bool esF = Convert.ToBoolean(reader["EsFamilia"]);
+                            ComponenteBE c = esF ? (ComponenteBE)new CompuestoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() } :
+                                                   (ComponenteBE)new PermisoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() };
+                            if (esF) LlenarHijos(c, cn); // Pasamos la conexión
+                            lista.Add(c);
                         }
                     }
                 }
@@ -196,43 +152,48 @@ namespace DAL
             return lista;
         }
 
-        /// <summary>
-        /// Método recursivo para reconstruir el árbol de Roles y Permisos.
-        /// </summary>
-        private void LlenarHijos(ComponenteBE padre)
+        public void LlenarHijos(ComponenteBE padre, SqlConnection cnExistente = null)
         {
-            using (SqlConnection cn = new SqlConnection(_connectionString))
+            bool cerrarConexion = false;
+            SqlConnection cn = cnExistente;
+            if (cn == null)
             {
-                string query = @"SELECT p.Id, p.Nombre, p.EsFamilia 
-                                 FROM Permiso p 
-                                 INNER JOIN Permiso_Permiso pp ON p.Id = pp.IdHijo 
-                                 WHERE pp.IdPadre = @idPadre";
+                cn = new SqlConnection(_connectionString);
+                cn.Open();
+                cerrarConexion = true;
+            }
 
+            try
+            {
+                string query = @"SELECT p.Id, p.Nombre, p.EsFamilia FROM Permiso p INNER JOIN Permiso_Permiso pp ON p.Id = pp.IdHijo WHERE pp.IdPadre = @idPadre";
                 using (SqlCommand cmd = new SqlCommand(query, cn))
                 {
                     cmd.Parameters.AddWithValue("@idPadre", padre.Id);
-                    cn.Open();
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
+                        var hijos = new List<ComponenteBE>();
                         while (reader.Read())
                         {
-                            int id = Convert.ToInt32(reader["Id"]);
-                            string nombre = reader["Nombre"].ToString();
-                            bool esFamilia = Convert.ToBoolean(reader["EsFamilia"]);
+                            bool esF = Convert.ToBoolean(reader["EsFamilia"]);
+                            ComponenteBE hijo = esF ? (ComponenteBE)new CompuestoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() } :
+                                                      (ComponenteBE)new PermisoBE { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() };
+                            hijos.Add(hijo);
+                        }
+                        reader.Close(); // Cerramos reader antes de la recursividad
 
-                            ComponenteBE hijo = esFamilia ?
-                                (ComponenteBE)new CompuestoBE { Id = id, Nombre = nombre } :
-                                (ComponenteBE)new PermisoBE { Id = id, Nombre = nombre };
-
-                            if (esFamilia) LlenarHijos(hijo);
-
-                            padre.AgregarHijo(hijo);
+                        foreach (var h in hijos)
+                        {
+                            if (h is CompuestoBE) LlenarHijos(h, cn);
+                            padre.AgregarHijo(h);
                         }
                     }
                 }
             }
+            finally
+            {
+                if (cerrarConexion && cn.State == ConnectionState.Open) cn.Close();
+            }
         }
-
         #endregion
     }
 }
