@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BE
 {
@@ -37,13 +38,37 @@ namespace BE
 
         /// <summary>
         /// Agrega un componente (Permiso simple o Rol) a la estructura del usuario.
+        /// Valida que no se agregue el mismo componente raíz dos veces.
         /// </summary>
         public void AgregarPermiso(ComponenteBE permiso)
         {
-            if (permiso != null)
+            if (permiso != null && !_permisos.Any(x => x.Id == permiso.Id))
             {
                 _permisos.Add(permiso);
             }
+        }
+
+        /// <summary>
+        /// Remueve un componente específico de la lista de permisos del usuario.
+        /// </summary>
+        public void QuitarPermiso(ComponenteBE permiso)
+        {
+            if (permiso != null)
+            {
+                var item = _permisos.FirstOrDefault(x => x.Id == permiso.Id);
+                if (item != null)
+                {
+                    _permisos.Remove(item);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Limpia la colección de permisos actual para permitir una reasignación completa.
+        /// </summary>
+        public void LimpiarPermisos()
+        {
+            _permisos.Clear();
         }
 
         /// <summary>

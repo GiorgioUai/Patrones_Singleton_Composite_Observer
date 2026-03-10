@@ -58,6 +58,12 @@
     <Compile Include="frmABMRoles.Designer.cs">
       <DependentUpon>frmABMRoles.cs</DependentUpon>
     </Compile>
+    <Compile Include="frmGestionUsuariosPermiso.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmGestionUsuariosPermiso.Designer.cs">
+      <DependentUpon>frmGestionUsuariosPermiso.cs</DependentUpon>
+    </Compile>
     <Compile Include="frmLogIn.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -78,6 +84,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="frmABMRoles.resx">
       <DependentUpon>frmABMRoles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmGestionUsuariosPermiso.resx">
+      <DependentUpon>frmGestionUsuariosPermiso.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmLogIn.resx">
       <DependentUpon>frmLogIn.cs</DependentUpon>

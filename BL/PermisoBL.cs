@@ -94,5 +94,13 @@ namespace BL
 
             return false;
         }
+        public void CargarHijos(ComponenteBE pComponente)
+        {
+            if (pComponente is CompuestoBE)
+            {
+                // Invocamos el método de la DAL que llena la lista interna de hijos
+                _permisoDAL.LlenarHijos(pComponente);
+            }
+        }
     }
 }

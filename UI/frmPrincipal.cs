@@ -34,21 +34,15 @@ namespace UI
 
         private void frmPrincipal_Load(object sender, EventArgs e)
         {
-            // 1. Configuración visual del menú de idiomas
             idiomasToolStripMenuItem.DropDownDirection = ToolStripDropDownDirection.BelowLeft;
 
-            // 2. Registro de este formulario como observador
             _sesionManager.Suscribir(this);
             _idiomaManager.Suscribir(this);
 
-            // 3. Actualizaciones iniciales
             ActualizarSesion();
             ActualizarIdioma();
         }
 
-        /// <summary>
-        /// Evento central que controla cualquier intento de cierre del formulario (incluyendo la "X").
-        /// </summary>
         private void frmPrincipal_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (_sesionManager._Usuario != null)
@@ -116,26 +110,40 @@ namespace UI
         private void gestionDePermisosToolStripMenuItem_Click(object sender, EventArgs e)
         {
             frmABMPermisos formPermisos = new frmABMPermisos();
-            // formPermisos.MdiParent = this; // Opcional: si activaste IsMdiContainer
             formPermisos.ShowDialog();
         }
 
         private void gestionDeRolesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             frmABMRoles formRoles = new frmABMRoles();
-            // formRoles.MdiParent = this; // Opcional: si activaste IsMdiContainer
             formRoles.ShowDialog();
         }
 
+        /// <summary>
+        /// Integración del nuevo formulario de Gestión de Usuarios y Permisos.
+        /// Se implementa lógica para evitar múltiples instancias abiertas.
+        /// </summary>
         private void asignarPermisosYRolesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Futura implementación: frmAsignarPermisos form = new frmAsignarPermisos();
-            MessageBox.Show("Módulo en desarrollo.", "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // Buscamos si el formulario ya está abierto
+            Form frmEncontrado = this.MdiChildren.FirstOrDefault(x => x is frmGestionUsuariosPermiso);
+
+            if (frmEncontrado != null)
+            {
+                // Si existe, lo traemos al frente
+                frmEncontrado.Activate();
+            }
+            else
+            {
+                // Si no existe, creamos la instancia y la mostramos como hija MDI
+                frmGestionUsuariosPermiso form = new frmGestionUsuariosPermiso();
+                form.MdiParent = this;
+                form.Show();
+            }
         }
 
         private void blanqueoDeContrasenaToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Futura implementación: frmBlanqueo form = new frmBlanqueo();
             MessageBox.Show("Módulo en desarrollo.", "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
