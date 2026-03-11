@@ -10,6 +10,10 @@ using System.Windows.Forms;
 
 namespace UI
 {
+    /// <summary>
+    /// Formulario para la gestión de Roles (Compuestos) y Permisos (Simples).
+    /// Implementa el patrón Composite para estructuras jerárquicas de seguridad.
+    /// </summary>
     public partial class frmABMRoles : Form, IIdiomaObserver, ISesionObserver
     {
         #region "Atributos Privados"
@@ -48,11 +52,28 @@ namespace UI
         #endregion
 
         #region "Implementación de Interfaces (Observer)"
+        /// <summary>
+        /// Traduce los controles, el título y las columnas de todas las grillas del formulario.
+        /// </summary>
         public void ActualizarIdioma()
         {
+            // Traducción de controles estándar (Labels, Buttons, GroupBoxes)
             Traductor.Traducir(this.Controls);
+
+            // Traducción del Título del Formulario
             if (this.Tag != null)
                 this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+
+            // Traducción dinámica de columnas para todas las grillas
+            List<DataGridView> grillas = new List<DataGridView> { dgvListaDeRoles, dgvCatalogoDeComponentes };
+            foreach (var dgv in grillas)
+            {
+                foreach (DataGridViewColumn col in dgv.Columns)
+                {
+                    if (col.Tag != null)
+                        col.HeaderText = _idiomaManager.ObtenerTexto(col.Tag.ToString());
+                }
+            }
         }
 
         public void ActualizarSesion()
@@ -92,8 +113,9 @@ namespace UI
             string nombreConflicto;
             if (_permisoBL.EstructuraContieneDuplicados(_rolSeleccionado, seleccionado, out nombreConflicto))
             {
-                MessageBox.Show($"Inconsistencia detectada: El componente '{seleccionado.Nombre}' contiene elementos (como '{nombreConflicto}') que ya existen en el Rol actual.",
-                                "Validación de Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string msgInconsistencia = _idiomaManager.ObtenerTexto("msg_InconsistenciaSeguridad") ?? "Inconsistencia detectada";
+                MessageBox.Show($"{msgInconsistencia}: '{seleccionado.Nombre}' contiene elementos que ya existen.",
+                                "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -110,7 +132,7 @@ namespace UI
                     if (string.IsNullOrWhiteSpace(txtDatosDelRol.Text)) throw new Exception("Nombre inválido.");
                     _rolSeleccionado.Nombre = txtDatosDelRol.Text.Trim();
                     _permisoBL.GuardarRol(_rolSeleccionado);
-                    MessageBox.Show("Guardado exitoso.");
+                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_GuardadoExitoso") ?? "Guardado exitoso.");
                     ActualizarGrillas();
                     FinalizarEdicion();
                 }
@@ -118,7 +140,6 @@ namespace UI
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
 
-        // Métodos originales en una sola línea integrados en su región correspondiente
         private void btnNuevo_Click(object sender, EventArgs e)
         {
             FinalizarEdicion();
@@ -180,14 +201,21 @@ namespace UI
             }
         }
 
+        /// <summary>
+        /// Crea las columnas de las grillas y asigna los Tags para su posterior traducción.
+        /// </summary>
         private void ConfigurarGrillasVisuales()
         {
             FormatearGrilla(dgvListaDeRoles);
             FormatearGrilla(dgvCatalogoDeComponentes);
-            dgvListaDeRoles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Id", HeaderText = "ID", Width = 40 });
-            dgvListaDeRoles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Nombre", HeaderText = "Rol", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            dgvCatalogoDeComponentes.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Id", HeaderText = "ID", Width = 40 });
-            dgvCatalogoDeComponentes.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Nombre", HeaderText = "Componente", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+
+            // Columnas para Lista de Roles
+            dgvListaDeRoles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Id", HeaderText = "ID", Width = 40, Tag = "ID" });
+            dgvListaDeRoles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Nombre", HeaderText = "Rol", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, Tag = "Role" });
+
+            // Columnas para Catálogo de Componentes
+            dgvCatalogoDeComponentes.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Id", HeaderText = "ID", Width = 40, Tag = "ID" });
+            dgvCatalogoDeComponentes.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Nombre", HeaderText = "Componente", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, Tag = "Component" });
         }
 
         private void FormatearGrilla(DataGridView pGrilla)
@@ -226,11 +254,20 @@ namespace UI
 
         private void ConfigurarEsteticaFormulario()
         {
-            this.Text = "Gestión de Roles Jerárquicos";
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
+
+            // Tags para traducción de controles básicos
             this.Tag = "frm_ABMRoles";
+            if (btnNuevo != null) btnNuevo.Tag = "btn_Nuevo";
+            if (btnModificar != null) btnModificar.Tag = "btn_Modificar";
+            if (btnEliminar != null) btnEliminar.Tag = "btn_Eliminar";
+            if (btnGuardar != null) btnGuardar.Tag = "btn_Guardar";
+            if (btnCancelar != null) btnCancelar.Tag = "btn_Cancelar";
+            if (btnVolver != null) btnVolver.Tag = "btn_Volver";
+            if (btnAgregar != null) btnAgregar.Tag = "btn_Agregar";
+            if (btnQuitar != null) btnQuitar.Tag = "btn_Quitar";
         }
         #endregion
     }

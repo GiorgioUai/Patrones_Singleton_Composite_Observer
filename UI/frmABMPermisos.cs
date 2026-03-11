@@ -61,14 +61,25 @@ namespace UI
         #region "Implementación de Interfaces (Observer)"
 
         /// <summary>
-        /// Traduce los controles del formulario y el título según el idioma actual.
+        /// Traduce los controles del formulario, el título y las columnas de la grilla.
         /// </summary>
         public void ActualizarIdioma()
         {
+            // Traducción de controles estándar
             Traductor.Traducir(this.Controls);
 
+            // Traducción del Título del Formulario
             if (this.Tag != null)
                 this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+
+            // Traducción de Columnas de la Grilla
+            foreach (DataGridViewColumn col in dgvListaDePermisos.Columns)
+            {
+                if (col.Tag != null)
+                {
+                    col.HeaderText = _idiomaManager.ObtenerTexto(col.Tag.ToString());
+                }
+            }
         }
 
         /// <summary>
@@ -167,7 +178,7 @@ namespace UI
         #region "Métodos de Soporte y UX"
 
         /// <summary>
-        /// Configura el aspecto visual de la grilla para ocultar datos técnicos del Composite.
+        /// Configura el aspecto visual de la grilla y define los Tags para traducción de columnas.
         /// </summary>
         private void ConfigurarGrilla()
         {
@@ -185,15 +196,17 @@ namespace UI
             {
                 DataPropertyName = "Id",
                 HeaderText = "ID",
-                Width = 50
+                Width = 50,
+                Tag = "ID" // Clave para traducción
             });
 
-            // Columna Nombre
+            // Columna Nombre (Descripción)
             dgvListaDePermisos.Columns.Add(new DataGridViewTextBoxColumn
             {
                 DataPropertyName = "Nombre",
-                HeaderText = "Descripción", // Se traducirá vía Traductor.Traducir
-                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                HeaderText = "Descripción",
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                Tag = "Description" // Clave para traducción
             });
         }
 
@@ -207,9 +220,13 @@ namespace UI
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            // Aseguramos que el botón Volver tenga su Tag para traducción
+            // Aseguramos que los controles tengan su Tag para traducción
             if (btnVolver != null) btnVolver.Tag = "btn_Volver";
-            // Tag para el título del formulario (se usa en ActualizarIdioma)
+            if (btnGuardar != null) btnGuardar.Tag = "btn_Guardar";
+            if (btnEliminar != null) btnEliminar.Tag = "btn_Eliminar";
+            if (btnCancelar != null) btnCancelar.Tag = "btn_Cancelar";
+
+            // Tag para el título del formulario
             this.Tag = "frm_ABMPermisos";
         }
 

@@ -11,6 +11,10 @@ using BL;
 
 namespace UI
 {
+    /// <summary>
+    /// Formulario para la gestión y asignación de Roles y Permisos a Usuarios.
+    /// Utiliza el patrón Composite para visualizar jerarquías y Observer para multi-idioma.
+    /// </summary>
     public partial class frmGestionUsuariosPermiso : Form, IIdiomaObserver, ISesionObserver
     {
         #region "Atributos Privados"
@@ -62,7 +66,7 @@ namespace UI
 
         private void frmGestionUsuariosPermiso_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // DESUSCRIPCIÓN OBLIGATORIA: Libera la referencia en el Singleton
+            // DESUSCRIPCIÓN OBLIGATORIA
             _sesionManager.Desuscribir(this);
             _idiomaManager.Desuscribir(this);
         }
@@ -71,17 +75,34 @@ namespace UI
 
         #region "Implementación de Interfaces (Observer)"
 
+        /// <summary>
+        /// Traduce los controles del formulario utilizando los Tags definidos en el Designer.
+        /// </summary>
         public void ActualizarIdioma()
         {
+            // 1. Traducción automática de controles (Labels, Buttons, etc.) vía Tags del Designer
             Traductor.Traducir(this.Controls);
 
+            // 2. Traducción del Título del Formulario
             if (this.Tag != null)
                 this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+
+            // 3. Traducción de columnas de la grilla (Configuradas dinámicamente en ActualizarGrilla)
+            foreach (DataGridViewColumn col in dgvListaDeUsuarios.Columns)
+            {
+                if (col.Tag != null)
+                {
+                    col.HeaderText = _idiomaManager.ObtenerTexto(col.Tag.ToString());
+                }
+            }
+
+            // 4. Traducción de botones con formato especial (NewLine)
+            btnAgregar.Text = (_idiomaManager.ObtenerTexto("btn_Agregar") ?? "AGREGAR") + Environment.NewLine + ">>";
+            btnQuitar.Text = (_idiomaManager.ObtenerTexto("btn_Quitar") ?? "QUITAR") + Environment.NewLine + "<<";
         }
 
         public void ActualizarSesion()
         {
-            // Valida el permiso requerido para este formulario específico
             if (!_sesionManager.TienePermiso("Seguridad_Asignacion"))
             {
                 this.Close();
@@ -109,9 +130,20 @@ namespace UI
         {
             dgvListaDeUsuarios.DataSource = null;
             dgvListaDeUsuarios.DataSource = lista;
+
+            // Ocultamos columnas técnicas
             if (dgvListaDeUsuarios.Columns["Id"] != null) dgvListaDeUsuarios.Columns["Id"].Visible = false;
             if (dgvListaDeUsuarios.Columns["IdIdioma"] != null) dgvListaDeUsuarios.Columns["IdIdioma"].Visible = false;
             if (dgvListaDeUsuarios.Columns["Password"] != null) dgvListaDeUsuarios.Columns["Password"].Visible = false;
+
+            // Asignación de Tags para traducción de cabeceras
+            if (dgvListaDeUsuarios.Columns["Nombre"] != null) dgvListaDeUsuarios.Columns["Nombre"].Tag = "col_Nombre";
+            if (dgvListaDeUsuarios.Columns["Apellido"] != null) dgvListaDeUsuarios.Columns["Apellido"].Tag = "col_Apellido";
+            if (dgvListaDeUsuarios.Columns["Email"] != null) dgvListaDeUsuarios.Columns["Email"].Tag = "col_Email";
+
+            // ASIGNACIÓN DE TAG PARA COLUMNA PERMISOS
+            if (dgvListaDeUsuarios.Columns["Permisos"] != null) dgvListaDeUsuarios.Columns["Permisos"].Tag = "col_Permisos";
+
             dgvListaDeUsuarios.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
@@ -122,18 +154,13 @@ namespace UI
             {
                 tvCatalogoPermisos.Nodes.Clear();
                 var listaRaiz = _permisoBL.ListarTodo();
-
                 foreach (var item in listaRaiz)
                 {
                     tvCatalogoPermisos.Nodes.Add(CrearNodoRecursivo(item));
                 }
-
                 tvCatalogoPermisos.ExpandAll();
             }
-            finally
-            {
-                tvCatalogoPermisos.EndUpdate();
-            }
+            finally { tvCatalogoPermisos.EndUpdate(); }
         }
 
         #endregion
@@ -150,39 +177,15 @@ namespace UI
             dgvListaDeUsuarios.BackgroundColor = Color.White;
             dgvListaDeUsuarios.AllowUserToAddRows = false;
 
+            // Optimización de renderizado
             dgvListaDeUsuarios.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.SetValue(dgvListaDeUsuarios, true);
 
-            dgvListaDeUsuarios.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
-            tvCatalogoPermisos.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
-            tvPermisosAsignados.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            pnlAcciones.Anchor = AnchorStyles.None;
             pnlAcciones.BackColor = Color.Transparent;
-            pnlAcciones.Size = new Size(100, 200);
-
-            btnAgregar.Size = new Size(80, 70);
-            btnQuitar.Size = new Size(80, 70);
-            btnAgregar.Text = "AGREGAR" + Environment.NewLine + ">>";
-            btnQuitar.Text = "QUITAR" + Environment.NewLine + "<<";
-            btnAgregar.TextAlign = ContentAlignment.MiddleCenter;
-            btnQuitar.TextAlign = ContentAlignment.MiddleCenter;
-            btnAgregar.Anchor = AnchorStyles.None;
-            btnQuitar.Anchor = AnchorStyles.None;
-
-            btnGuardar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnVolver.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            pnlAcciones.Size = new Size(110, 200);
 
             tvCatalogoPermisos.FullRowSelect = true;
-            tvCatalogoPermisos.ShowLines = true;
             tvPermisosAsignados.FullRowSelect = true;
-            tvPermisosAsignados.ShowLines = true;
-
-            if (imageList1 != null)
-            {
-                tvCatalogoPermisos.ImageList = imageList1;
-                tvPermisosAsignados.ImageList = imageList1;
-            }
         }
 
         private void AlinearContenedorAcciones()
@@ -193,7 +196,6 @@ namespace UI
             int centroX = xInicio + ((xFin - xInicio) / 2);
             int centroY = this.ClientSize.Height / 2;
             pnlAcciones.Location = new Point(centroX - (pnlAcciones.Width / 2), centroY - (pnlAcciones.Height / 2));
-            pnlAcciones.Invalidate();
         }
 
         #endregion
@@ -254,21 +256,14 @@ namespace UI
             if (_usuarioSeleccionado == null || tvCatalogoPermisos.SelectedNode == null) return;
             ComponenteBE nuevo = (ComponenteBE)tvCatalogoPermisos.SelectedNode.Tag;
 
-            bool yaLoTiene = false;
             string conflicto = "";
-            foreach (var pExistente in _usuarioSeleccionado.Permisos)
-            {
-                if (_permisoBL.EstructuraContieneDuplicados(pExistente, nuevo, out conflicto))
-                {
-                    yaLoTiene = true;
-                    break;
-                }
-                if (pExistente.Id == nuevo.Id) { yaLoTiene = true; conflicto = nuevo.Nombre; break; }
-            }
+            bool yaLoTiene = _usuarioSeleccionado.Permisos.Any(pExistente =>
+                _permisoBL.EstructuraContieneDuplicados(pExistente, nuevo, out conflicto) || pExistente.Id == nuevo.Id);
 
             if (yaLoTiene)
             {
-                MessageBox.Show($"El usuario ya cuenta con: {conflicto}", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string msgAviso = _idiomaManager.ObtenerTexto("msg_YaPoseePermiso") ?? "El usuario ya cuenta con";
+                MessageBox.Show($"{msgAviso}: {nuevo.Nombre}", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -280,11 +275,14 @@ namespace UI
         {
             if (_usuarioSeleccionado == null || tvPermisosAsignados.SelectedNode == null) return;
             TreeNode nodoActual = tvPermisosAsignados.SelectedNode;
+
             if (nodoActual.Parent != null)
             {
                 TreeNode nodoRaiz = nodoActual;
                 while (nodoRaiz.Parent != null) nodoRaiz = nodoRaiz.Parent;
-                if (MessageBox.Show($"¿Desea quitar el Rol '{nodoRaiz.Text}'?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
+
+                string msgConf = _idiomaManager.ObtenerTexto("msg_ConfirmarQuitarRol") ?? "¿Desea quitar el componente?";
+                if (MessageBox.Show($"{msgConf} '{nodoRaiz.Text}'?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
                     _usuarioSeleccionado.QuitarPermiso((ComponenteBE)nodoRaiz.Tag);
                     RefrescarArbolAsignados();
@@ -303,7 +301,7 @@ namespace UI
             {
                 if (_usuarioSeleccionado != null && _usuarioBL.GuardarPermisos(_usuarioSeleccionado))
                 {
-                    MessageBox.Show("Cambios persistidos correctamente.", "Éxito");
+                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_GuardadoExitoso") ?? "Cambios persistidos.", "Éxito");
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }

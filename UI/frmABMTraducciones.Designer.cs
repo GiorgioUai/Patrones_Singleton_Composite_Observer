@@ -101,7 +101,7 @@
             // lblTextoTraduccion
             // 
             this.lblTextoTraduccion.AutoSize = true;
-            this.lblTextoTraduccion.Location = new System.Drawing.Point(525, 58);
+            this.lblTextoTraduccion.Location = new System.Drawing.Point(525, 70);
             this.lblTextoTraduccion.Name = "lblTextoTraduccion";
             this.lblTextoTraduccion.Size = new System.Drawing.Size(122, 13);
             this.lblTextoTraduccion.TabIndex = 6;
@@ -144,7 +144,7 @@
             // lblListadoTraducciones
             // 
             this.lblListadoTraducciones.AutoSize = true;
-            this.lblListadoTraducciones.Location = new System.Drawing.Point(66, 58);
+            this.lblListadoTraducciones.Location = new System.Drawing.Point(40, 70);
             this.lblListadoTraducciones.Name = "lblListadoTraducciones";
             this.lblListadoTraducciones.Size = new System.Drawing.Size(124, 13);
             this.lblListadoTraducciones.TabIndex = 10;

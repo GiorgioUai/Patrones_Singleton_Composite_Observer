@@ -61,7 +61,7 @@
             // lblUsuario
             // 
             this.lblUsuario.AutoSize = true;
-            this.lblUsuario.Location = new System.Drawing.Point(41, 49);
+            this.lblUsuario.Location = new System.Drawing.Point(22, 53);
             this.lblUsuario.Name = "lblUsuario";
             this.lblUsuario.Size = new System.Drawing.Size(43, 13);
             this.lblUsuario.TabIndex = 1;
@@ -106,7 +106,7 @@
             // lblListaUsuarios
             // 
             this.lblListaUsuarios.AutoSize = true;
-            this.lblListaUsuarios.Location = new System.Drawing.Point(31, 97);
+            this.lblListaUsuarios.Location = new System.Drawing.Point(22, 106);
             this.lblListaUsuarios.Name = "lblListaUsuarios";
             this.lblListaUsuarios.Size = new System.Drawing.Size(88, 13);
             this.lblListaUsuarios.TabIndex = 7;
@@ -116,7 +116,7 @@
             // lblListaDeRoles_Permisos
             // 
             this.lblListaDeRoles_Permisos.AutoSize = true;
-            this.lblListaDeRoles_Permisos.Location = new System.Drawing.Point(376, 95);
+            this.lblListaDeRoles_Permisos.Location = new System.Drawing.Point(368, 105);
             this.lblListaDeRoles_Permisos.Name = "lblListaDeRoles_Permisos";
             this.lblListaDeRoles_Permisos.Size = new System.Drawing.Size(127, 13);
             this.lblListaDeRoles_Permisos.TabIndex = 8;
@@ -126,7 +126,7 @@
             // lblAsignacionUsuarioPermisos
             // 
             this.lblAsignacionUsuarioPermisos.AutoSize = true;
-            this.lblAsignacionUsuarioPermisos.Location = new System.Drawing.Point(819, 91);
+            this.lblAsignacionUsuarioPermisos.Location = new System.Drawing.Point(857, 105);
             this.lblAsignacionUsuarioPermisos.Name = "lblAsignacionUsuarioPermisos";
             this.lblAsignacionUsuarioPermisos.Size = new System.Drawing.Size(168, 13);
             this.lblAsignacionUsuarioPermisos.TabIndex = 9;
