@@ -6,11 +6,12 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using BE;
+using BE.Interfaces;
 using BL;
 
 namespace UI
 {
-    public partial class frmGestionUsuariosPermiso : Form
+    public partial class frmGestionUsuariosPermiso : Form, IIdiomaObserver, ISesionObserver
     {
         #region "Atributos Privados"
 
@@ -20,9 +21,13 @@ namespace UI
         private List<UsuarioBE> _cacheUsuarios;
         private Timer _tmrDebounce;
 
+        // Managers para el patrón Observer
+        private readonly SesionManagerBL _sesionManager = SesionManagerBL.GetInstance();
+        private readonly IdiomaManagerBL _idiomaManager = IdiomaManagerBL.GetInstance();
+
         #endregion
 
-        #region "Constructor y Carga Inicial"
+        #region "Constructor y Ciclo de Vida (Observer)"
 
         public frmGestionUsuariosPermiso()
         {
@@ -40,12 +45,52 @@ namespace UI
         {
             this.WindowState = FormWindowState.Maximized;
 
+            // SUSCRIPCIÓN AL PATRÓN OBSERVER
+            _sesionManager.Suscribir(this);
+            _idiomaManager.Suscribir(this);
+
             CargarUsuarios();
             CargarCatalogoMaestro();
+
+            // Ejecución inicial de actualizaciones
+            ActualizarIdioma();
+            ActualizarSesion();
 
             this.PerformLayout();
             AlinearContenedorAcciones();
         }
+
+        private void frmGestionUsuariosPermiso_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // DESUSCRIPCIÓN OBLIGATORIA: Libera la referencia en el Singleton
+            _sesionManager.Desuscribir(this);
+            _idiomaManager.Desuscribir(this);
+        }
+
+        #endregion
+
+        #region "Implementación de Interfaces (Observer)"
+
+        public void ActualizarIdioma()
+        {
+            Traductor.Traducir(this.Controls);
+
+            if (this.Tag != null)
+                this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+        }
+
+        public void ActualizarSesion()
+        {
+            // Valida el permiso requerido para este formulario específico
+            if (!_sesionManager.TienePermiso("Seguridad_Asignacion"))
+            {
+                this.Close();
+            }
+        }
+
+        #endregion
+
+        #region "Lógica de Carga y Datos"
 
         private void ConfigurarDebounce()
         {
@@ -80,11 +125,9 @@ namespace UI
 
                 foreach (var item in listaRaiz)
                 {
-                    // Hidratación ya resuelta en DAL.ListarTodo()
                     tvCatalogoPermisos.Nodes.Add(CrearNodoRecursivo(item));
                 }
 
-                // CAMBIO SOLICITADO: Expandimos todo el catálogo por defecto
                 tvCatalogoPermisos.ExpandAll();
             }
             finally
@@ -198,7 +241,6 @@ namespace UI
                 {
                     tvPermisosAsignados.Nodes.Add(CrearNodoRecursivo(p));
                 }
-                // Siempre expandido para ver la seguridad actual del usuario
                 tvPermisosAsignados.ExpandAll();
             }
         }

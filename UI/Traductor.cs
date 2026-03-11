@@ -20,9 +20,14 @@ namespace UI
                     c.Text = manager.ObtenerTexto(c.Tag.ToString());
                 }
 
+                // Agregamos soporte para MenuStrip y ToolStrip manteniendo tu lógica original
                 if (c is MenuStrip ms)
                 {
                     TraducirMenuItems(ms.Items);
+                }
+                else if (c is ToolStrip ts)
+                {
+                    TraducirMenuItems(ts.Items);
                 }
 
                 if (c.HasChildren)
@@ -32,6 +37,9 @@ namespace UI
             }
         }
 
+        /// <summary>
+        /// Recorre los ítems de un menú o barra de herramientas de forma recursiva.
+        /// </summary>
         private static void TraducirMenuItems(ToolStripItemCollection items)
         {
             IdiomaManagerBL manager = IdiomaManagerBL.GetInstance();

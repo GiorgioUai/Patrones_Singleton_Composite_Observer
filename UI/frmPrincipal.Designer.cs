@@ -37,6 +37,7 @@
             this.gestionDePermisosToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gestiondeRolesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.asignarPermisosYRolesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.gestionDeIdiomasToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.blanqueoDeContraseñaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cambioDeContraseñaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
@@ -96,6 +97,7 @@
             this.gestionDePermisosToolStripMenuItem,
             this.gestiondeRolesToolStripMenuItem,
             this.asignarPermisosYRolesToolStripMenuItem,
+            this.gestionDeIdiomasToolStripMenuItem,
             this.blanqueoDeContraseñaToolStripMenuItem,
             this.cambioDeContraseñaToolStripMenuItem});
             this.seguridadToolStripMenuItem.Name = "seguridadToolStripMenuItem";
@@ -126,6 +128,14 @@
             this.asignarPermisosYRolesToolStripMenuItem.Tag = "Seguridad_Asignacion";
             this.asignarPermisosYRolesToolStripMenuItem.Text = "Asignar Permisos y Roles";
             this.asignarPermisosYRolesToolStripMenuItem.Click += new System.EventHandler(this.asignarPermisosYRolesToolStripMenuItem_Click);
+            // 
+            // gestionDeIdiomasToolStripMenuItem
+            // 
+            this.gestionDeIdiomasToolStripMenuItem.Name = "gestionDeIdiomasToolStripMenuItem";
+            this.gestionDeIdiomasToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.gestionDeIdiomasToolStripMenuItem.Tag = "Seguridad_GestionIdiomas";
+            this.gestionDeIdiomasToolStripMenuItem.Text = "Gestion de Idiomas";
+            this.gestionDeIdiomasToolStripMenuItem.Click += new System.EventHandler(this.gestionDeIdiomasToolStripMenuItem_Click);
             // 
             // blanqueoDeContraseñaToolStripMenuItem
             // 
@@ -174,6 +184,7 @@
         private System.Windows.Forms.ToolStripMenuItem gestionDePermisosToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem gestiondeRolesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem asignarPermisosYRolesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem gestionDeIdiomasToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem blanqueoDeContraseñaToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem cambioDeContraseñaToolStripMenuItem;
     }

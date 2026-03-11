@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using BE;
+using BE.Interfaces;
 using BL;
 
 namespace UI
@@ -8,12 +9,15 @@ namespace UI
     /// <summary>
     /// Formulario para el Alta, Baja y Modificación de Permisos (Patentes simples).
     /// Permite la depuración de registros duplicados y gestión de seguridad atómica.
+    /// Implementa el patrón Observer para reaccionar a cambios de idioma y sesión.
     /// </summary>
-    public partial class frmABMPermisos : Form
+    public partial class frmABMPermisos : Form, IIdiomaObserver, ISesionObserver
     {
         #region "Atributos y Constructor"
 
         private readonly PermisoBL _permisoBL;
+        private readonly IdiomaManagerBL _idiomaManager = IdiomaManagerBL.GetInstance();
+        private readonly SesionManagerBL _sesionManager = SesionManagerBL.GetInstance();
 
         public frmABMPermisos()
         {
@@ -24,15 +28,59 @@ namespace UI
 
         #endregion
 
-        #region "Eventos de Formulario"
+        #region "Eventos de Formulario (Ciclo de Vida)"
 
         /// <summary>
-        /// Garantiza que al abrir la ventana, los datos ya estén cargados y la grilla configurada.
+        /// Garantiza que al abrir la ventana, se suscriba a los observadores y cargue los datos.
         /// </summary>
         private void frmABMPermisos_Load(object sender, EventArgs e)
         {
+            // Suscripción al patrón Observer
+            _idiomaManager.Suscribir(this);
+            _sesionManager.Suscribir(this);
+
             ConfigurarGrilla();
             CargarGrilla();
+
+            // Ejecución inicial de actualizaciones
+            ActualizarIdioma();
+            ActualizarSesion();
+        }
+
+        /// <summary>
+        /// Desuscripción obligatoria de los Managers para evitar fugas de memoria.
+        /// </summary>
+        private void frmABMPermisos_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _idiomaManager.Desuscribir(this);
+            _sesionManager.Desuscribir(this);
+        }
+
+        #endregion
+
+        #region "Implementación de Interfaces (Observer)"
+
+        /// <summary>
+        /// Traduce los controles del formulario y el título según el idioma actual.
+        /// </summary>
+        public void ActualizarIdioma()
+        {
+            Traductor.Traducir(this.Controls);
+
+            if (this.Tag != null)
+                this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+        }
+
+        /// <summary>
+        /// Valida en tiempo real si el usuario mantiene el permiso para gestionar patentes.
+        /// </summary>
+        public void ActualizarSesion()
+        {
+            // Verificamos el permiso específico para este módulo ABM
+            if (!_sesionManager.TienePermiso("Seguridad_GestionPermisos"))
+            {
+                this.Close();
+            }
         }
 
         #endregion
@@ -46,7 +94,9 @@ namespace UI
         {
             if (string.IsNullOrWhiteSpace(txtPermiso.Text))
             {
-                MessageBox.Show("El nombre del permiso no puede estar vacío.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string mensajeVacío = _idiomaManager.ObtenerTexto("msg_CampoVacio");
+                string tituloAtencion = _idiomaManager.ObtenerTexto("cap_Atencion");
+                MessageBox.Show(mensajeVacío ?? "El nombre del permiso no puede estar vacío.", tituloAtencion ?? "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -57,7 +107,8 @@ namespace UI
 
                 _permisoBL.GuardarPermisoSimple(nuevoPermiso);
 
-                MessageBox.Show("Permiso guardado con éxito.", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                string mensajeExito = _idiomaManager.ObtenerTexto("msg_GuardadoExitoso");
+                MessageBox.Show(mensajeExito ?? "Permiso guardado con éxito.", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 FinalizarOperacion();
             }
             catch (Exception ex)
@@ -75,15 +126,18 @@ namespace UI
             {
                 var permiso = (PermisoBE)dgvListaDePermisos.CurrentRow.DataBoundItem;
 
-                var rta = MessageBox.Show($"¿Está seguro de eliminar el permiso '{permiso.Nombre}' (ID: {permiso.Id})?\nEsta acción es irreversible.",
-                                          "Confirmación de Limpieza", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                string msgConfirmar = _idiomaManager.ObtenerTexto("msg_ConfirmarEliminar");
+                string capConfirmar = _idiomaManager.ObtenerTexto("cap_Confirmacion");
+
+                var rta = MessageBox.Show($"{msgConfirmar} '{permiso.Nombre}'?\n(ID: {permiso.Id})",
+                                          capConfirmar ?? "Confirmación", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (rta == DialogResult.Yes)
                 {
                     try
                     {
                         _permisoBL.EliminarPermiso(permiso);
-                        MessageBox.Show("Registro eliminado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(_idiomaManager.ObtenerTexto("msg_EliminadoExitoso"), "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         FinalizarOperacion();
                     }
                     catch (Exception ex)
@@ -94,13 +148,10 @@ namespace UI
             }
             else
             {
-                MessageBox.Show("Por favor, seleccione un registro de la lista para eliminar.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(_idiomaManager.ObtenerTexto("msg_SeleccioneRegistro"), "Atención", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
-        /// <summary>
-        /// Cierra el formulario para retornar al menú principal.
-        /// </summary>
         private void btnVolver_Click(object sender, EventArgs e)
         {
             this.Close();
@@ -141,7 +192,7 @@ namespace UI
             dgvListaDePermisos.Columns.Add(new DataGridViewTextBoxColumn
             {
                 DataPropertyName = "Nombre",
-                HeaderText = "Descripción del Permiso",
+                HeaderText = "Descripción", // Se traducirá vía Traductor.Traducir
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
             });
         }
@@ -151,7 +202,6 @@ namespace UI
         /// </summary>
         private void ConfigurarEsteticaFormulario()
         {
-            this.Text = "Administración de Permisos (Patentes)";
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -159,6 +209,8 @@ namespace UI
 
             // Aseguramos que el botón Volver tenga su Tag para traducción
             if (btnVolver != null) btnVolver.Tag = "btn_Volver";
+            // Tag para el título del formulario (se usa en ActualizarIdioma)
+            this.Tag = "frm_ABMPermisos";
         }
 
         private void CargarGrilla()

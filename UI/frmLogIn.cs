@@ -9,33 +9,31 @@ using BL;
 namespace UI
 {
     /// <summary>
-    /// Formulario de autenticación de usuarios con soporte Multiidioma y UX mejorada.
+    /// Formulario de autenticación de usuarios con soporte Multiidioma.
+    /// Implementa el patrón Observer para reaccionar a cambios de idioma.
     /// </summary>
     public partial class frmLogIn : Form, IIdiomaObserver
     {
-        #region "Atributos / Variables Privadas"
+        #region "Atributos Privados"
 
         private readonly IdiomaManagerBL _idiomaManager = IdiomaManagerBL.GetInstance();
+        private readonly SesionManagerBL _sesionManager = SesionManagerBL.GetInstance();
         private bool _placeholderActivo = true;
 
         #endregion
 
-        #region "Constructor"
+        #region "Constructor y Observer"
 
         public frmLogIn()
         {
             InitializeComponent();
         }
 
-        #endregion
-
-        #region "Eventos del Formulario"
-
         private void frmLogIn_Load(object sender, EventArgs e)
         {
+            // Suscripción al idioma
             _idiomaManager.Suscribir(this);
 
-            // SEGURIDAD: Configuramos la máscara de password por código
             txtPassword.PasswordChar = '*';
             txtPassword.UseSystemPasswordChar = true;
 
@@ -44,21 +42,19 @@ namespace UI
 
         private void frmLogIn_FormClosing(object sender, FormClosingEventArgs e)
         {
+            // Desuscripción obligatoria
             _idiomaManager.Desuscribir(this);
         }
 
         #endregion
 
-        #region "Implementación de IIdiomaObserver"
+        #region "Implementación IIdiomaObserver"
 
         public void ActualizarIdioma()
         {
             Traductor.Traducir(this.Controls);
 
-            if (_placeholderActivo)
-            {
-                EstablecerPlaceholder();
-            }
+            if (_placeholderActivo) EstablecerPlaceholder();
 
             if (this.Tag != null)
                 this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
@@ -66,7 +62,7 @@ namespace UI
 
         #endregion
 
-        #region "Lógica de Placeholder (Email)"
+        #region "Lógica de UX y Login"
 
         private void EstablecerPlaceholder()
         {
@@ -95,10 +91,6 @@ namespace UI
             }
         }
 
-        #endregion
-
-        #region "Eventos de Botones (Lógica de Negocio)"
-
         private void btnLogIn_Click(object sender, EventArgs e)
         {
             try
@@ -106,16 +98,12 @@ namespace UI
                 UsuarioBL negocio = new UsuarioBL();
                 string emailParaLogin = _placeholderActivo ? "" : txtUsuario.Text;
 
-                bool exito = negocio.LogIn(emailParaLogin, txtPassword.Text);
-
-                if (exito)
+                if (negocio.LogIn(emailParaLogin, txtPassword.Text))
                 {
-                    var usuarioLogueado = SesionManagerBL.GetInstance()._Usuario;
+                    var usuarioLogueado = _sesionManager._Usuario;
                     string msgExito = _idiomaManager.ObtenerTexto("msg_SesionIniciada");
-                    string tituloExito = _idiomaManager.ObtenerTexto("btn_Ingresar");
 
-                    MessageBox.Show($"{msgExito}\nBienvenido: {usuarioLogueado.Nombre} {usuarioLogueado.Apellido}",
-                                    tituloExito, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"{msgExito}\nBienvenido: {usuarioLogueado.Nombre}", "Login", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     frmPrincipal principal = new frmPrincipal();
                     principal.Show();
@@ -123,33 +111,20 @@ namespace UI
                 }
                 else
                 {
-                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_ErrorLogin"),
-                                    _idiomaManager.ObtenerTexto("frm_LogIn"),
-                                    MessageBoxButtons.OK, MessageBoxIcon.Stop);
-
+                    MessageBox.Show(_idiomaManager.ObtenerTexto("msg_ErrorLogin"), "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                     txtPassword.Clear();
                     txtPassword.Focus();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
         }
 
-        private void btnSalir_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
+        private void btnSalir_Click(object sender, EventArgs e) => Application.Exit();
 
-        /// <summary>
-        /// Gestiona el registro de nuevos usuarios con validación de campos y asignación de Rol automático.
-        /// </summary>
         private void btnRegistrarse_Click(object sender, EventArgs e)
         {
             try
             {
-                // 1. Validar que los campos no estén vacíos (Placeholder incluido)
                 if (_placeholderActivo || string.IsNullOrWhiteSpace(txtUsuario.Text) ||
                     string.IsNullOrWhiteSpace(txtPassword.Text) ||
                     string.IsNullOrWhiteSpace(txtNombre.Text) ||
@@ -161,20 +136,16 @@ namespace UI
                     return;
                 }
 
-                // 2. Crear objeto BE con los datos de la UI
                 UsuarioBE nuevoUsuario = new UsuarioBE
                 {
                     Email = txtUsuario.Text,
                     Nombre = txtNombre.Text,
                     Apellido = txtApellido.Text,
-                    IdIdioma = _idiomaManager.IdiomaActual.Id // Hereda el idioma activo en la app
+                    IdIdioma = _idiomaManager.IdiomaActual.Id
                 };
 
-                // 3. Llamar a la BL para procesar registro, hash y Rol base
                 UsuarioBL negocio = new UsuarioBL();
-                bool exito = negocio.Registrar(nuevoUsuario, txtPassword.Text);
-
-                if (exito)
+                if (negocio.Registrar(nuevoUsuario, txtPassword.Text))
                 {
                     MessageBox.Show(_idiomaManager.ObtenerTexto("msg_RegistroExitoso"),
                                     _idiomaManager.ObtenerTexto("cap_Registro"),
@@ -184,30 +155,17 @@ namespace UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al registrar: " + ex.Message, "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error al registrar: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        #endregion
-
-        #region "Métodos de Soporte"
-
-        /// <summary>
-        /// Limpia los campos de texto y restablece placeholders. 
-        /// AHORA ES PUBLIC para ser llamado desde el formulario principal.
-        /// </summary>
         public void limpiarCampos()
         {
             if (txtNombre != null) txtNombre.Clear();
             if (txtApellido != null) txtApellido.Clear();
-
-            // Borrado físico de la clave
             txtPassword.Text = string.Empty;
-            txtPassword.Clear();
-
             txtUsuario.Text = "";
             EstablecerPlaceholder();
-
             txtUsuario.Focus();
         }
 

@@ -8,14 +8,29 @@ namespace DAL.Interfaces
     /// </summary>
     public interface IIdiomaDAL
     {
-        /// <summary>
-        /// Obtiene la lista completa de entidades de idioma disponibles.
-        /// </summary>
+        #region "Lectura"
+
         List<IdiomaBE> ObtenerIdiomas();
+        Dictionary<string, string> ObtenerTraducciones(string nombreIdioma);
+        List<string> ListarTagsExistentes();
+
+        #endregion
+
+        #region "Escritura (ABM)"
+
+        void GuardarEtiqueta(string nombreTag);
+        void GuardarTraduccion(int idIdioma, string nombreTag, string texto);
 
         /// <summary>
-        /// Obtiene el diccionario de etiquetas y traducciones para un idioma específico.
+        /// Elimina físicamente una traducción para un idioma específico.
         /// </summary>
-        Dictionary<string, string> ObtenerTraducciones(string nombreIdioma);
+        void EliminarTraduccion(int idIdioma, string nombreTag);
+
+        /// <summary>
+        /// Elimina una etiqueta de la maestra (y por cascada sus traducciones).
+        /// </summary>
+        void EliminarEtiqueta(string nombreTag);
+
+        #endregion
     }
 }

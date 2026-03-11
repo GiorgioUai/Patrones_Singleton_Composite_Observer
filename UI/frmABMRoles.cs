@@ -1,4 +1,5 @@
 ﻿using BE;
+using BE.Interfaces;
 using BL;
 using System;
 using System.Collections.Generic;
@@ -9,11 +10,16 @@ using System.Windows.Forms;
 
 namespace UI
 {
-    public partial class frmABMRoles : Form
+    public partial class frmABMRoles : Form, IIdiomaObserver, ISesionObserver
     {
+        #region "Atributos Privados"
         private PermisoBL _permisoBL = new PermisoBL();
         private CompuestoBE _rolSeleccionado;
         private List<ComponenteBE> _catalogoCompleto;
+
+        private readonly IdiomaManagerBL _idiomaManager = IdiomaManagerBL.GetInstance();
+        private readonly SesionManagerBL _sesionManager = SesionManagerBL.GetInstance();
+        #endregion
 
         public frmABMRoles()
         {
@@ -21,12 +27,44 @@ namespace UI
             ConfigurarEsteticaFormulario();
         }
 
+        #region "Eventos de Formulario (Ciclo de Vida)"
         private void frmABMRoles_Load(object sender, EventArgs e)
         {
+            _idiomaManager.Suscribir(this);
+            _sesionManager.Suscribir(this);
+
             ConfigurarGrillasVisuales();
             ActualizarGrillas();
+
+            ActualizarIdioma();
+            ActualizarSesion();
         }
 
+        private void frmABMRoles_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _idiomaManager.Desuscribir(this);
+            _sesionManager.Desuscribir(this);
+        }
+        #endregion
+
+        #region "Implementación de Interfaces (Observer)"
+        public void ActualizarIdioma()
+        {
+            Traductor.Traducir(this.Controls);
+            if (this.Tag != null)
+                this.Text = _idiomaManager.ObtenerTexto(this.Tag.ToString());
+        }
+
+        public void ActualizarSesion()
+        {
+            if (!_sesionManager.TienePermiso("Seguridad_GestionRoles"))
+            {
+                this.Close();
+            }
+        }
+        #endregion
+
+        #region "Eventos de Grillas y Selección"
         private void dgvListaDeRoles_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
@@ -37,21 +75,20 @@ namespace UI
                 ActualizarEstructuraVisual(_rolSeleccionado);
             }
         }
+        #endregion
 
+        #region "Eventos de Botones"
         private void btnAgregar_Click(object sender, EventArgs e)
         {
             if (dgvCatalogoDeComponentes.CurrentRow == null || _rolSeleccionado == null) return;
 
-            // Obtenemos el componente base del catálogo
             ComponenteBE seleccionado = (ComponenteBE)dgvCatalogoDeComponentes.CurrentRow.DataBoundItem;
 
-            // IMPORTANTE: Si es un Rol, traemos su estructura completa para poder validar sus hijos
             if (seleccionado is CompuestoBE)
             {
                 seleccionado = _permisoBL.ObtenerEstructuraCompleta(seleccionado.Id);
             }
 
-            // Aplicamos la validación de duplicados en profundidad
             string nombreConflicto;
             if (_permisoBL.EstructuraContieneDuplicados(_rolSeleccionado, seleccionado, out nombreConflicto))
             {
@@ -80,6 +117,47 @@ namespace UI
             }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
+
+        // Métodos originales en una sola línea integrados en su región correspondiente
+        private void btnNuevo_Click(object sender, EventArgs e)
+        {
+            FinalizarEdicion();
+            _rolSeleccionado = new CompuestoBE();
+            txtDatosDelRol.Focus();
+        }
+        private void btnModificar_Click(object sender, EventArgs e)
+        {
+            if (_rolSeleccionado != null)
+            {
+                _rolSeleccionado.Nombre = txtDatosDelRol.Text;
+                _rolSeleccionado.Estado = ComponenteBE.EstadoEntidad.Modificado;
+                ActualizarEstructuraVisual(_rolSeleccionado);
+            }
+        }
+        private void btnEliminar_Click(object sender, EventArgs e)
+        {
+            if (_rolSeleccionado != null && _rolSeleccionado.Id > 0)
+            {
+                _permisoBL.EliminarPermiso(_rolSeleccionado);
+                FinalizarEdicion();
+            }
+        }
+        private void btnQuitar_Click(object sender, EventArgs e)
+        {
+            if (tvEstructuraDelRol.SelectedNode != null)
+            {
+                _rolSeleccionado.QuitarHijo((ComponenteBE)tvEstructuraDelRol.SelectedNode.Tag);
+                ActualizarEstructuraVisual(_rolSeleccionado);
+            }
+        }
+        private void btnVolver_Click(object sender, EventArgs e) => this.Close();
+        private void btnCancelar_Click(object sender, EventArgs e)
+        {
+            if (_rolSeleccionado != null)
+                _rolSeleccionado.LimpiarEstados();
+            FinalizarEdicion();
+        }
+        #endregion
 
         #region "Métodos de Soporte Visual (UX)"
         private void ActualizarEstructuraVisual(CompuestoBE pRol)
@@ -152,14 +230,8 @@ namespace UI
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
+            this.Tag = "frm_ABMRoles";
         }
         #endregion
-
-        private void btnNuevo_Click(object sender, EventArgs e) { FinalizarEdicion(); _rolSeleccionado = new CompuestoBE(); txtDatosDelRol.Focus(); }
-        private void btnModificar_Click(object sender, EventArgs e) { if (_rolSeleccionado != null) { _rolSeleccionado.Nombre = txtDatosDelRol.Text; _rolSeleccionado.Estado = ComponenteBE.EstadoEntidad.Modificado; ActualizarEstructuraVisual(_rolSeleccionado); } }
-        private void btnEliminar_Click(object sender, EventArgs e) { if (_rolSeleccionado != null && _rolSeleccionado.Id > 0) { _permisoBL.EliminarPermiso(_rolSeleccionado); FinalizarEdicion(); } }
-        private void btnQuitar_Click(object sender, EventArgs e) { if (tvEstructuraDelRol.SelectedNode != null) { _rolSeleccionado.QuitarHijo((ComponenteBE)tvEstructuraDelRol.SelectedNode.Tag); ActualizarEstructuraVisual(_rolSeleccionado); } }
-        private void btnVolver_Click(object sender, EventArgs e) => this.Close();
-        private void btnCancelar_Click(object sender, EventArgs e) { if (_rolSeleccionado != null) _rolSeleccionado.LimpiarEstados(); FinalizarEdicion(); }
     }
 }

@@ -88,9 +88,6 @@ namespace BL
 
         #region "Métodos Públicos y Lógica de Datos"
 
-        /// <summary>
-        /// Cambia el idioma actual basándose en el objeto de entidad IdiomaBE.
-        /// </summary>
         public void CambiarIdioma(IdiomaBE nuevoIdioma)
         {
             if (nuevoIdioma != null)
@@ -101,13 +98,8 @@ namespace BL
             }
         }
 
-        /// <summary>
-        /// Cambia el idioma actual basándose en su nombre/código (ej: "ES").
-        /// Busca el ID correspondiente en la DAL para mantener la integridad del objeto.
-        /// </summary>
         public void CambiarIdioma(string nombreIdioma)
         {
-            // Buscamos el objeto completo para no perder el ID
             var idiomasDisponibles = ObtenerIdiomas();
             var idiomaEncontrado = idiomasDisponibles.FirstOrDefault(i => i.Nombre.Equals(nombreIdioma, StringComparison.OrdinalIgnoreCase));
 
@@ -117,7 +109,6 @@ namespace BL
             }
             else
             {
-                // Fallback por seguridad si no se encuentra en la DB
                 IdiomaActual = new IdiomaBE { Id = 1, Nombre = nombreIdioma };
                 CargarTraducciones();
                 Notificar();
@@ -129,6 +120,9 @@ namespace BL
             return _idiomaDAL.ObtenerIdiomas();
         }
 
+        /// <summary>
+        /// Retorna el texto traducido para el idioma ACTUAL de la sesión.
+        /// </summary>
         public string ObtenerTexto(string tag)
         {
             if (_traducciones != null && _traducciones.ContainsKey(tag))
@@ -138,10 +132,74 @@ namespace BL
             return $"[{tag}]";
         }
 
+        /// <summary>
+        /// Retorna el texto de un tag para un idioma específico sin cambiar la sesión actual.
+        /// Útil para el ABM de traducciones.
+        /// </summary>
+        public string ObtenerTextoPorIdioma(string tag, string nombreIdioma)
+        {
+            var diccTmp = _idiomaDAL.ObtenerTraducciones(nombreIdioma);
+            if (diccTmp != null && diccTmp.ContainsKey(tag))
+            {
+                return diccTmp[tag];
+            }
+            return "";
+        }
+
         private void CargarTraducciones()
         {
-            // Ahora pasamos el Nombre (sigla) del objeto IdiomaActual
             _traducciones = _idiomaDAL.ObtenerTraducciones(IdiomaActual.Nombre);
+        }
+
+        #endregion
+
+        #region "Lógica para el ABM de Idiomas"
+
+        public void GuardarEtiqueta(string nombreTag)
+        {
+            _idiomaDAL.GuardarEtiqueta(nombreTag);
+        }
+
+        public void GuardarTraduccion(int idIdioma, string nombreTag, string texto)
+        {
+            _idiomaDAL.GuardarTraduccion(idIdioma, nombreTag, texto);
+
+            if (idIdioma == IdiomaActual.Id)
+            {
+                CargarTraducciones();
+                Notificar();
+            }
+        }
+
+        public List<string> ListarTagsExistentes()
+        {
+            return _idiomaDAL.ListarTagsExistentes();
+        }
+
+        /// <summary>
+        /// Elimina una traducción específica para un idioma.
+        /// </summary>
+        public void EliminarTraduccion(int idIdioma, string nombreTag)
+        {
+            _idiomaDAL.EliminarTraduccion(idIdioma, nombreTag);
+
+            if (idIdioma == IdiomaActual.Id)
+            {
+                CargarTraducciones();
+                Notificar();
+            }
+        }
+
+        /// <summary>
+        /// Elimina la etiqueta de la maestra y todas sus traducciones.
+        /// </summary>
+        public void EliminarEtiqueta(string nombreTag)
+        {
+            _idiomaDAL.EliminarEtiqueta(nombreTag);
+
+            // Siempre recargamos y notificamos porque el tag desaparece de todos los idiomas
+            CargarTraducciones();
+            Notificar();
         }
 
         #endregion
