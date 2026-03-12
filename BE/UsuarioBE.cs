@@ -26,6 +26,16 @@ namespace BE
 
         #endregion
 
+        #region "Estado de Cuenta y Seguridad"
+
+        /// <summary>
+        /// Indica si el usuario debe ser redirigido obligatoriamente al cambio de password.
+        /// Seteado en true cuando el administrador blanquea la clave o expira.
+        /// </summary>
+        public bool DebeCambiarPassword { get; set; }
+
+        #endregion
+
         #region "Seguridad (Pattern Composite)"
 
         // Lista privada para manejo interno de la estructura de permisos

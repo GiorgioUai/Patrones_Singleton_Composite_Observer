@@ -181,6 +181,23 @@ namespace UI
             }
         }
 
+        /// <summary>
+        /// Gestiona la apertura de la ventana de cambio de contraseña voluntario.
+        /// </summary>
+        private void cambioDeContraseñaToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Al ser voluntario, usamos el usuario actual de la sesión.
+            UsuarioBE usuarioActual = _sesionManager._Usuario;
+
+            if (usuarioActual != null)
+            {
+                using (frmCambioPassword formCambio = new frmCambioPassword(usuarioActual))
+                {
+                    formCambio.ShowDialog();
+                }
+            }
+        }
+
         private void blanqueoDeContrasenaToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Módulo en desarrollo.", "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Information);

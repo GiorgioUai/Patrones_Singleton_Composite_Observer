@@ -17,7 +17,8 @@ namespace DAL
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios WHERE Email = @email AND Password = @pass";
+                // ARQUITECTO: Se agrega DebeCambiarPassword a la consulta
+                string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma, DebeCambiarPassword FROM Usuarios WHERE Email = @email AND Password = @pass";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -37,14 +38,15 @@ namespace DAL
                                     Nombre = reader["Nombre"].ToString(),
                                     Apellido = reader["Apellido"].ToString(),
                                     Email = reader["Email"].ToString(),
-                                    IdIdioma = reader["IdIdioma"] != DBNull.Value ? Convert.ToInt32(reader["IdIdioma"]) : 1
+                                    IdIdioma = reader["IdIdioma"] != DBNull.Value ? Convert.ToInt32(reader["IdIdioma"]) : 1,
+                                    // SEGURIDAD: Aplicamos el criterio de que NULL se trate como TRUE (obligatorio)
+                                    DebeCambiarPassword = reader["DebeCambiarPassword"] == DBNull.Value || Convert.ToBoolean(reader["DebeCambiarPassword"])
                                 };
                             }
                         }
 
                         if (usuarioEncontrado != null)
                         {
-                            // Al iniciar sesión es mandatorio hidratar el árbol de seguridad completo
                             CargarSeguridadUsuario(usuarioEncontrado, connection);
                         }
                     }
@@ -63,7 +65,8 @@ namespace DAL
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma FROM Usuarios";
+                // QA: Se incluye el flag en el listado para auditoría o administración
+                string query = "SELECT Id, Nombre, Apellido, Email, IdIdioma, DebeCambiarPassword FROM Usuarios";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     try
@@ -79,7 +82,8 @@ namespace DAL
                                     Nombre = reader["Nombre"].ToString(),
                                     Apellido = reader["Apellido"].ToString(),
                                     Email = reader["Email"].ToString(),
-                                    IdIdioma = reader["IdIdioma"] != DBNull.Value ? Convert.ToInt32(reader["IdIdioma"]) : 1
+                                    IdIdioma = reader["IdIdioma"] != DBNull.Value ? Convert.ToInt32(reader["IdIdioma"]) : 1,
+                                    DebeCambiarPassword = reader["DebeCambiarPassword"] == DBNull.Value || Convert.ToBoolean(reader["DebeCambiarPassword"])
                                 });
                             }
                         }
@@ -114,7 +118,6 @@ namespace DAL
             try
             {
                 PermisoDAL permisoDAL = new PermisoDAL();
-                // Consultamos permisos directos y roles asignados (EsFamilia en BD)
                 string query = @"SELECT p.Id, p.Nombre, p.EsFamilia 
                                  FROM Permiso p 
                                  INNER JOIN Usuario_Permiso up ON p.Id = up.IdPermiso 
@@ -140,7 +143,6 @@ namespace DAL
 
                 foreach (var comp in componentes)
                 {
-                    // Si es un Rol (Compuesto), cargamos recursivamente sus hijos
                     if (comp is CompuestoBE)
                     {
                         permisoDAL.LlenarHijos(comp, connection);
@@ -167,8 +169,9 @@ namespace DAL
 
                 try
                 {
-                    string queryUser = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, IdIdioma) 
-                                       VALUES (@nom, @ape, @email, @pass, @idioma); 
+                    // ARQUITECTO: Se incluye el flag en el INSERT inicial (por defecto en el objeto BE)
+                    string queryUser = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, IdIdioma, DebeCambiarPassword) 
+                                       VALUES (@nom, @ape, @email, @pass, @idioma, @debe); 
                                        SELECT SCOPE_IDENTITY();";
 
                     SqlCommand cmdUser = new SqlCommand(queryUser, connection, transaction);
@@ -177,6 +180,7 @@ namespace DAL
                     cmdUser.Parameters.AddWithValue("@email", pUsuario.Email);
                     cmdUser.Parameters.AddWithValue("@pass", pPasswordHash);
                     cmdUser.Parameters.AddWithValue("@idioma", pUsuario.IdIdioma);
+                    cmdUser.Parameters.AddWithValue("@debe", pUsuario.DebeCambiarPassword);
 
                     int nuevoIdUsuario = Convert.ToInt32(cmdUser.ExecuteScalar());
 
@@ -206,7 +210,6 @@ namespace DAL
 
                 try
                 {
-                    // 1. Limpieza de asignaciones previas
                     string queryDelete = "DELETE FROM Usuario_Permiso WHERE IdUsuario = @id";
                     using (SqlCommand cmdDel = new SqlCommand(queryDelete, connection, transaction))
                     {
@@ -214,8 +217,6 @@ namespace DAL
                         cmdDel.ExecuteNonQuery();
                     }
 
-                    // 2. Inserción de la nueva estructura de seguridad
-                    // Optimizamos reutilizando el objeto Command y sus parámetros
                     string queryInsert = "INSERT INTO Usuario_Permiso (IdUsuario, IdPermiso) VALUES (@idU, @idP)";
                     using (SqlCommand cmdIns = new SqlCommand(queryInsert, connection, transaction))
                     {
@@ -237,6 +238,41 @@ namespace DAL
                 {
                     transaction.Rollback();
                     throw new Exception("Error al persistir la nueva configuración de seguridad del usuario.", ex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Actualiza la clave y baja el flag de seguridad.
+        /// </summary>
+        public bool ActualizarPassword(int idUsuario, string nuevoPasswordHash)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "UPDATE Usuarios SET Password = @pass, DebeCambiarPassword = 0 WHERE Id = @id";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@pass", nuevoPasswordHash);
+                    command.Parameters.AddWithValue("@id", idUsuario);
+                    connection.Open();
+                    return command.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Setea el flag para obligar al cambio de clave.
+        /// </summary>
+        public bool ForzarCambioPassword(int idUsuario)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "UPDATE Usuarios SET DebeCambiarPassword = 1 WHERE Id = @id";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", idUsuario);
+                    connection.Open();
+                    return command.ExecuteNonQuery() > 0;
                 }
             }
         }

@@ -64,6 +64,12 @@
     <Compile Include="frmABMTraducciones.Designer.cs">
       <DependentUpon>frmABMTraducciones.cs</DependentUpon>
     </Compile>
+    <Compile Include="frmCambioPassword.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmCambioPassword.Designer.cs">
+      <DependentUpon>frmCambioPassword.cs</DependentUpon>
+    </Compile>
     <Compile Include="frmGestionUsuariosPermiso.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -93,6 +99,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="frmABMTraducciones.resx">
       <DependentUpon>frmABMTraducciones.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmCambioPassword.resx">
+      <DependentUpon>frmCambioPassword.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmGestionUsuariosPermiso.resx">
       <DependentUpon>frmGestionUsuariosPermiso.cs</DependentUpon>

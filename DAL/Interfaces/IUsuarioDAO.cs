@@ -39,6 +39,16 @@ namespace DAL.Interfaces
         /// </summary>
         bool GuardarPermisos(UsuarioBE pUsuario);
 
+        /// <summary>
+        /// Actualiza la contraseña y setea DebeCambiarPassword en false.
+        /// </summary>
+        bool ActualizarPassword(int idUsuario, string nuevoPasswordHash);
+
+        /// <summary>
+        /// Setea el flag DebeCambiarPassword en true para forzar el cambio al próximo inicio.
+        /// </summary>
+        bool ForzarCambioPassword(int idUsuario);
+
         #endregion
     }
 }

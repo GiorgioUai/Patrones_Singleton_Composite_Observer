@@ -31,7 +31,7 @@ namespace UI
 
         private void frmLogIn_Load(object sender, EventArgs e)
         {
-            // Suscripción al idioma
+            // Suscripción al sistema de notificaciones de idioma
             _idiomaManager.Suscribir(this);
 
             txtPassword.PasswordChar = '*';
@@ -42,7 +42,7 @@ namespace UI
 
         private void frmLogIn_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Desuscripción obligatoria
+            // Desuscripción obligatoria para liberar recursos
             _idiomaManager.Desuscribir(this);
         }
 
@@ -52,6 +52,7 @@ namespace UI
 
         public void ActualizarIdioma()
         {
+            // Traducción técnica de los controles mediante sus Tags
             Traductor.Traducir(this.Controls);
 
             if (_placeholderActivo) EstablecerPlaceholder();
@@ -98,25 +99,56 @@ namespace UI
                 UsuarioBL negocio = new UsuarioBL();
                 string emailParaLogin = _placeholderActivo ? "" : txtUsuario.Text;
 
-                if (negocio.LogIn(emailParaLogin, txtPassword.Text))
+                // 1. Solicitud de autenticación a la capa de negocio
+                UsuarioBE usuarioLogueado = negocio.LogIn(emailParaLogin, txtPassword.Text);
+
+                if (usuarioLogueado != null)
                 {
-                    var usuarioLogueado = _sesionManager._Usuario;
-                    string msgExito = _idiomaManager.ObtenerTexto("msg_SesionIniciada");
+                    // 2. Validación de Estado de Seguridad (Link entre formularios)
+                    if (usuarioLogueado.DebeCambiarPassword)
+                    {
+                        MessageBox.Show(_idiomaManager.ObtenerTexto("msg_CambioClaveObligatorio"),
+                                        "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-                    MessageBox.Show($"{msgExito}\nBienvenido: {usuarioLogueado.Nombre}", "Login", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Invocación modal del formulario de cambio de clave
+                        using (frmCambioPassword frmCambio = new frmCambioPassword(usuarioLogueado))
+                        {
+                            if (frmCambio.ShowDialog() == DialogResult.OK)
+                            {
+                                // Si el cambio fue exitoso, obligamos a re-ingresar con la nueva clave
+                                MessageBox.Show(_idiomaManager.ObtenerTexto("msg_ReingresoNecesario"), "Login", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                limpiarCampos();
+                            }
+                            else
+                            {
+                                // Si cancela, limpiamos y no permitimos el acceso
+                                limpiarCampos();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 3. Flujo normal de acceso al sistema
+                        string msgExito = _idiomaManager.ObtenerTexto("msg_SesionIniciada");
+                        MessageBox.Show($"{msgExito}\nBienvenido: {usuarioLogueado.Nombre}", "Login", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    frmPrincipal principal = new frmPrincipal();
-                    principal.Show();
-                    this.Hide();
+                        frmPrincipal principal = new frmPrincipal();
+                        principal.Show();
+                        this.Hide();
+                    }
                 }
                 else
                 {
+                    // Error de credenciales
                     MessageBox.Show(_idiomaManager.ObtenerTexto("msg_ErrorLogin"), "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                     txtPassword.Clear();
                     txtPassword.Focus();
                 }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error Crítico");
+            }
         }
 
         private void btnSalir_Click(object sender, EventArgs e) => Application.Exit();
@@ -125,6 +157,7 @@ namespace UI
         {
             try
             {
+                // Validación de campos mandatorios
                 if (_placeholderActivo || string.IsNullOrWhiteSpace(txtUsuario.Text) ||
                     string.IsNullOrWhiteSpace(txtPassword.Text) ||
                     string.IsNullOrWhiteSpace(txtNombre.Text) ||
@@ -141,7 +174,8 @@ namespace UI
                     Email = txtUsuario.Text,
                     Nombre = txtNombre.Text,
                     Apellido = txtApellido.Text,
-                    IdIdioma = _idiomaManager.IdiomaActual.Id
+                    IdIdioma = _idiomaManager.IdiomaActual.Id,
+                    DebeCambiarPassword = false // Estado inicial por defecto
                 };
 
                 UsuarioBL negocio = new UsuarioBL();

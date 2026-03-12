@@ -28,19 +28,46 @@ namespace BL
 
         #region "Lógica de Negocio de Usuarios"
 
-        public bool LogIn(string email, string password)
+        /// <summary>
+        /// Valida las credenciales y gestiona el inicio de sesión.
+        /// </summary>
+        /// <returns>El usuario encontrado. La UI debe validar el flag DebeCambiarPassword.</returns>
+        public UsuarioBE LogIn(string email, string password)
         {
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return false;
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return null;
 
             string passwordHasheado = GenerarHash(password);
             var usuario = _usuarioDAO.ValidarAcceso(email, passwordHasheado);
 
-            if (usuario != null)
+            // SEGURIDAD: Solo iniciamos sesión formal si NO debe cambiar password.
+            if (usuario != null && !usuario.DebeCambiarPassword)
             {
                 SesionManagerBL.GetInstance().LogIn(usuario);
-                return true;
             }
-            return false;
+
+            return usuario; // Retornamos el usuario para que la UI actúe según el flag.
+        }
+
+        /// <summary>
+        /// Realiza el cambio de contraseña solicitado por el usuario.
+        /// </summary>
+        public bool CambiarPassword(UsuarioBE pUsuario, string nuevaPassword)
+        {
+            if (pUsuario == null || string.IsNullOrWhiteSpace(nuevaPassword)) return false;
+
+            string passwordHasheado = GenerarHash(nuevaPassword);
+            bool exito = _usuarioDAO.ActualizarPassword(pUsuario.Id, passwordHasheado);
+
+            if (exito) pUsuario.DebeCambiarPassword = false;
+            return exito;
+        }
+
+        /// <summary>
+        /// Fuerza el cambio de contraseña (Blanqueo) para un usuario.
+        /// </summary>
+        public bool ForzarCambioPassword(int idUsuario)
+        {
+            return _usuarioDAO.ForzarCambioPassword(idUsuario);
         }
 
         public List<UsuarioBE> ListarTodos()
@@ -48,32 +75,22 @@ namespace BL
             return _usuarioDAO.ListarTodos();
         }
 
-        /// <summary>
-        /// Hidrata el objeto usuario con sus Roles y Permisos asignados.
-        /// Aplica Lazy Loading para optimizar el rendimiento de la aplicación.
-        /// </summary>
         public void CargarSeguridad(UsuarioBE pUsuario)
         {
             if (pUsuario == null) throw new ArgumentNullException(nameof(pUsuario));
             _usuarioDAO.ObtenerSeguridadUsuario(pUsuario);
         }
 
-        /// <summary>
-        /// Gestiona el registro de nuevos usuarios aplicando políticas de seguridad (Hashing).
-        /// </summary>
         public bool Registrar(UsuarioBE nuevoUsuario, string password)
         {
             string passwordHasheado = GenerarHash(password);
-
-            // Se asigna por defecto el Rol base definido en la arquitectura del sistema
             const int idRolBase = 1;
 
+            // QA: Por defecto, los nuevos usuarios podrían ser obligados a cambiar clave
+            // dependiendo de la política comercial/seguridad.
             return _usuarioDAO.Registrar(nuevoUsuario, passwordHasheado, idRolBase);
         }
 
-        /// <summary>
-        /// Solicita la persistencia de los cambios realizados en el árbol de permisos del usuario.
-        /// </summary>
         public bool GuardarPermisos(UsuarioBE pUsuario)
         {
             if (pUsuario == null) throw new ArgumentNullException(nameof(pUsuario));
